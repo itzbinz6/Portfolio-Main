@@ -242,465 +242,431 @@ form.entry-form { background:var(--surface); border:1px solid var(--border); bor
   </div>
 </div>
 
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
 // ============================================================
-// EDIT THESE TWO SECTIONS — everything else is automatic
+// FILL THESE IN — everything else is automatic
 // ============================================================
 
-// 1. Cloudinary (free image uploads — no card needed)
-//    Sign up at cloudinary.com, then fill in your Cloud Name
-//    and an unsigned Upload Preset (Settings > Upload > Upload presets)
+// Cloudinary (free image uploads)
+// Get these from cloudinary.com > Settings > Upload > Upload presets
 const CLOUDINARY_CONFIG = {
-  cloudName: "YOUR_CLOUD_NAME",       // e.g. "dxyzabc123"
-  uploadPreset: "YOUR_UPLOAD_PRESET"  // e.g. "portfolio_uploads"
+  cloudName: "YOUR_CLOUD_NAME",
+  uploadPreset: "YOUR_UPLOAD_PRESET"
 };
 
-// 2. Your live site URL (no trailing slash)
-//    Once set, you can type just a filename in image fields
-//    e.g. "12baskets.png" becomes "https://yoursite.vercel.app/images/12baskets.png"
+// Your Vercel site URL — no trailing slash
+// Lets you type just "12baskets.png" in image fields
 const SITE_BASE_URL = "YOUR_VERCEL_URL"; // e.g. "https://abisola-portfolio.vercel.app"
 
 // ============================================================
-</script>
-<script>
+
+// Guard: show error if firebase-config.js isn't filled in yet
 if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
-  document.getElementById('loginErr').textContent = "Firebase isn't configured yet. Fill in firebase-config.js first (see FIREBASE_SETUP_GUIDE.md).";
+  document.getElementById('loginErr').textContent =
+    "Firebase isn't configured yet — fill in firebase-config.js first.";
 } else {
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
 
-// ---------- AUTH ----------
-const loginView = document.getElementById('loginView');
-const adminView = document.getElementById('adminView');
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    loginView.style.display = 'none';
-    adminView.style.display = 'block';
-    loadAll();
-  } else {
-    loginView.style.display = 'flex';
-    adminView.style.display = 'none';
-  }
-});
-
-document.getElementById('loginBtn').addEventListener('click', () => {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const errEl = document.getElementById('loginErr');
-  errEl.textContent = '';
-  auth.signInWithEmailAndPassword(email, pass).catch(err => {
-    errEl.textContent = err.message;
-  });
-});
-
-document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
-
-// ---------- TABS ----------
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelector(`.panel[data-panel="${btn.dataset.tab}"]`).classList.add('active');
-  });
-});
-
-// ---------- HELPERS ----------
-// Uploads to Cloudinary's free tier (no card required) via an
-// "unsigned" upload preset. Edit CLOUDINARY_CONFIG at the top of this script.
-async function uploadImageIfAny(fileInput, collectionName) {
-  const file = fileInput.files[0];
-  if (!file) return null;
-
-  if (typeof CLOUDINARY_CONFIG === 'undefined' ||
-      CLOUDINARY_CONFIG.cloudName === 'YOUR_CLOUD_NAME' ||
-      CLOUDINARY_CONFIG.uploadPreset === 'YOUR_UPLOAD_PRESET') {
-    alert('Image upload isn\'t configured yet. Fill in CLOUDINARY_CONFIG at the top of admin.html, or paste an image URL instead.');
-    return null;
-  }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-  formData.append('folder', collectionName);
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`, {
-    method: 'POST',
-    body: formData
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Upload failed');
-  return data.secure_url;
-}
-
-// Resolves what the user typed in the image URL field.
-// - Just a filename like "12baskets.png" → prefixes SITE_BASE_URL/images/
-// - A full URL (starts with http/https) → used as-is
-// - Empty → returns empty string
-function resolveImageUrl(value) {
-  const v = value.trim();
-  if (!v) return '';
-  if (v.startsWith('http://') || v.startsWith('https://') || v.startsWith('/')) return v;
-  const base = (typeof SITE_BASE_URL !== 'undefined' && SITE_BASE_URL !== 'YOUR_VERCEL_URL')
-    ? SITE_BASE_URL.replace(/\/$/, '')
-    : '';
-  return base ? `${base}/images/${v}` : `images/${v}`;
-}
-
-
-  loadProjects();
-  loadCerts();
-  loadTools();
-  loadBlog();
-}
-
-// ============================================================
-// PROJECTS
-// ============================================================
-const projectForm = document.getElementById('projectForm');
-const projectMsg = document.getElementById('projectMsg');
-
-function loadProjects() {
-  db.collection('projects').orderBy('order').get().then(snap => {
-    const list = document.getElementById('projectsList');
-    list.innerHTML = '';
-    if (snap.empty) { list.innerHTML = '<div class="empty-note">No extra projects yet. These appear in the "View More Work" carousel on the site.</div>'; return; }
-    snap.forEach(doc => {
-      const p = doc.data();
-      const row = document.createElement('div');
-      row.className = 'item';
-      row.innerHTML = `
-        <div class="item-info">
-          <div class="item-title">${p.name || '(untitled)'} ${p.demoTag ? '<span style="font-size:0.75rem;color:var(--ink3);">· Demo</span>' : ''}</div>
-          <div class="item-sub">${p.type || ''} · order ${p.order ?? ''}</div>
-        </div>
-        <div class="item-actions">
-          <button class="btn-ghost btn-small" data-edit="${doc.id}">Edit</button>
-          <button class="btn-ghost btn-small btn-danger" data-delete="${doc.id}">Delete</button>
-        </div>`;
-      list.appendChild(row);
-    });
-    list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editProject(b.dataset.edit)));
-    list.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', () => deleteEntry('projects', b.dataset.delete, loadProjects)));
-  });
-}
-
-function editProject(id) {
-  db.collection('projects').doc(id).get().then(doc => {
-    const p = doc.data();
-    document.getElementById('projectId').value = id;
-    document.getElementById('p_name').value = p.name || '';
-    document.getElementById('p_type').value = p.type || '';
-    document.getElementById('p_description').value = p.description || '';
-    document.getElementById('p_link').value = p.link || '';
-    document.getElementById('p_order').value = p.order ?? 1;
-    document.getElementById('p_imageUrl').value = p.imageUrl || '';
-    document.getElementById('p_demoTag').checked = !!p.demoTag;
-    document.getElementById('projectFormTitle').textContent = 'Edit Project';
-    document.getElementById('projectSubmitBtn').textContent = 'Save Changes';
-    document.getElementById('projectCancelBtn').style.display = 'inline-flex';
-    projectForm.scrollIntoView({ behavior: 'smooth' });
-  });
-}
-
-document.getElementById('projectCancelBtn').addEventListener('click', () => resetForm('project'));
-
-projectForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  projectMsg.textContent = 'Saving…';
-  try {
-    let imageUrl = resolveImageUrl(document.getElementById('p_imageUrl').value);
-    const uploaded = await uploadImageIfAny(document.getElementById('p_imageFile'), 'projects');
-    if (uploaded) imageUrl = uploaded;
-
-    const data = {
-      name: document.getElementById('p_name').value.trim(),
-      type: document.getElementById('p_type').value.trim(),
-      description: document.getElementById('p_description').value.trim(),
-      link: document.getElementById('p_link').value.trim(),
-      order: Number(document.getElementById('p_order').value) || 0,
-      imageUrl: imageUrl,
-      demoTag: document.getElementById('p_demoTag').checked
-    };
-
-    const id = document.getElementById('projectId').value;
-    if (id) await db.collection('projects').doc(id).set(data);
-    else await db.collection('projects').add(data);
-
-    projectMsg.textContent = 'Saved!';
-    resetForm('project');
-    loadProjects();
-    setTimeout(() => projectMsg.textContent = '', 2000);
-  } catch (err) {
-    projectMsg.textContent = 'Error: ' + err.message;
-  }
-});
-
-// ============================================================
-// CERTIFICATIONS
-// ============================================================
-const certForm = document.getElementById('certForm');
-const certMsg = document.getElementById('certMsg');
-
-function loadCerts() {
-  db.collection('certifications').orderBy('order').get().then(snap => {
-    const list = document.getElementById('certsList');
-    list.innerHTML = '';
-    if (snap.empty) { list.innerHTML = '<div class="empty-note">No extra certifications yet. These appear after the existing two in the Certifications section.</div>'; return; }
-    snap.forEach(doc => {
-      const c = doc.data();
-      const row = document.createElement('div');
-      row.className = 'item';
-      row.innerHTML = `
-        <div class="item-info">
-          <div class="item-title">${c.title || '(untitled)'}</div>
-          <div class="item-sub">${c.issuer || ''} · order ${c.order ?? ''}</div>
-        </div>
-        <div class="item-actions">
-          <button class="btn-ghost btn-small" data-edit="${doc.id}">Edit</button>
-          <button class="btn-ghost btn-small btn-danger" data-delete="${doc.id}">Delete</button>
-        </div>`;
-      list.appendChild(row);
-    });
-    list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editCert(b.dataset.edit)));
-    list.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', () => deleteEntry('certifications', b.dataset.delete, loadCerts)));
-  });
-}
-
-function editCert(id) {
-  db.collection('certifications').doc(id).get().then(doc => {
-    const c = doc.data();
-    document.getElementById('certId').value = id;
-    document.getElementById('c_title').value = c.title || '';
-    document.getElementById('c_issuer').value = c.issuer || '';
-    document.getElementById('c_description').value = c.description || '';
-    document.getElementById('c_link').value = c.link || '';
-    document.getElementById('c_order').value = c.order ?? 1;
-    document.getElementById('c_imageUrl').value = c.imageUrl || '';
-    document.getElementById('certFormTitle').textContent = 'Edit Certification';
-    document.getElementById('certSubmitBtn').textContent = 'Save Changes';
-    document.getElementById('certCancelBtn').style.display = 'inline-flex';
-    certForm.scrollIntoView({ behavior: 'smooth' });
-  });
-}
-
-document.getElementById('certCancelBtn').addEventListener('click', () => resetForm('cert'));
-
-certForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  certMsg.textContent = 'Saving…';
-  try {
-    let imageUrl = resolveImageUrl(document.getElementById('c_imageUrl').value);
-    const uploaded = await uploadImageIfAny(document.getElementById('c_imageFile'), 'certifications');
-    if (uploaded) imageUrl = uploaded;
-
-    const data = {
-      title: document.getElementById('c_title').value.trim(),
-      issuer: document.getElementById('c_issuer').value.trim(),
-      description: document.getElementById('c_description').value.trim(),
-      link: document.getElementById('c_link').value.trim(),
-      order: Number(document.getElementById('c_order').value) || 0,
-      imageUrl: imageUrl
-    };
-
-    const id = document.getElementById('certId').value;
-    if (id) await db.collection('certifications').doc(id).set(data);
-    else await db.collection('certifications').add(data);
-
-    certMsg.textContent = 'Saved!';
-    resetForm('cert');
-    loadCerts();
-    setTimeout(() => certMsg.textContent = '', 2000);
-  } catch (err) {
-    certMsg.textContent = 'Error: ' + err.message;
-  }
-});
-
-// ============================================================
-// TOOLS
-// ============================================================
-const toolForm = document.getElementById('toolForm');
-const toolMsg = document.getElementById('toolMsg');
-
-function loadTools() {
-  db.collection('tools').orderBy('order').get().then(snap => {
-    const list = document.getElementById('toolsList');
-    list.innerHTML = '';
-    if (snap.empty) { list.innerHTML = '<div class="empty-note">No extra tools yet. These appear after the existing six in the Tools section.</div>'; return; }
-    snap.forEach(doc => {
-      const t = doc.data();
-      const row = document.createElement('div');
-      row.className = 'item';
-      row.innerHTML = `
-        <div class="item-info">
-          <div class="item-title"><i class="${t.icon || ''}"></i> ${t.name || '(untitled)'}</div>
-          <div class="item-sub">order ${t.order ?? ''}</div>
-        </div>
-        <div class="item-actions">
-          <button class="btn-ghost btn-small" data-edit="${doc.id}">Edit</button>
-          <button class="btn-ghost btn-small btn-danger" data-delete="${doc.id}">Delete</button>
-        </div>`;
-      list.appendChild(row);
-    });
-    list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editTool(b.dataset.edit)));
-    list.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', () => deleteEntry('tools', b.dataset.delete, loadTools)));
-  });
-}
-
-function editTool(id) {
-  db.collection('tools').doc(id).get().then(doc => {
-    const t = doc.data();
-    document.getElementById('toolId').value = id;
-    document.getElementById('t_name').value = t.name || '';
-    document.getElementById('t_icon').value = t.icon || '';
-    document.getElementById('t_description').value = t.description || '';
-    document.getElementById('t_color').value = t.color || 'yellow';
-    document.getElementById('t_order').value = t.order ?? 1;
-    document.getElementById('toolFormTitle').textContent = 'Edit Tool';
-    document.getElementById('toolSubmitBtn').textContent = 'Save Changes';
-    document.getElementById('toolCancelBtn').style.display = 'inline-flex';
-    toolForm.scrollIntoView({ behavior: 'smooth' });
-  });
-}
-
-document.getElementById('toolCancelBtn').addEventListener('click', () => resetForm('tool'));
-
-toolForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  toolMsg.textContent = 'Saving…';
-  try {
-    const data = {
-      name: document.getElementById('t_name').value.trim(),
-      icon: document.getElementById('t_icon').value.trim(),
-      description: document.getElementById('t_description').value.trim(),
-      color: document.getElementById('t_color').value,
-      order: Number(document.getElementById('t_order').value) || 0
-    };
-
-    const id = document.getElementById('toolId').value;
-    if (id) await db.collection('tools').doc(id).set(data);
-    else await db.collection('tools').add(data);
-
-    toolMsg.textContent = 'Saved!';
-    resetForm('tool');
-    loadTools();
-    setTimeout(() => toolMsg.textContent = '', 2000);
-  } catch (err) {
-    toolMsg.textContent = 'Error: ' + err.message;
-  }
-});
-
-// ============================================================
-// SHARED
-// ============================================================
-function deleteEntry(collection, id, reload) {
-  if (!confirm("Delete this entry? This can't be undone.")) return;
-  db.collection(collection).doc(id).delete().then(reload);
-}
-
-function resetForm(prefix) {
-  document.getElementById(`${prefix}Form`).reset();
-  document.getElementById(`${prefix}Id`).value = '';
-  const label = prefix === 'cert' ? 'Certification' : prefix.charAt(0).toUpperCase() + prefix.slice(1);
-  document.getElementById(`${prefix}FormTitle`).textContent = `Add New ${label}`;
-  document.getElementById(`${prefix}SubmitBtn`).textContent = `Add ${label}`;
-  document.getElementById(`${prefix}CancelBtn`).style.display = 'none';
-}
-
-// ============================================================
-// BLOG
-// ============================================================
-const blogForm = document.getElementById('blogForm');
-const blogMsg = document.getElementById('blogMsg');
-
-function loadBlog() {
-  db.collection('blog').orderBy('order').get().then(snap => {
-    const list = document.getElementById('blogList');
-    list.innerHTML = '';
-    if (snap.empty) { list.innerHTML = '<div class="empty-note">No blog posts yet. Add one below — it\'ll appear live on your portfolio.</div>'; return; }
-    snap.forEach(doc => {
-      const b = doc.data();
-      const row = document.createElement('div');
-      row.className = 'item';
-      row.innerHTML = `
-        <div class="item-info">
-          <div class="item-title">${b.title || '(untitled)'}</div>
-          <div class="item-sub">${b.tag || ''} · order ${b.order ?? ''}</div>
-        </div>
-        <div class="item-actions">
-          <button class="btn-ghost btn-small" data-edit="${doc.id}">Edit</button>
-          <button class="btn-ghost btn-small btn-danger" data-delete="${doc.id}">Delete</button>
-        </div>`;
-      list.appendChild(row);
-    });
-    list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editBlog(b.dataset.edit)));
-    list.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', () => deleteEntry('blog', b.dataset.delete, loadBlog)));
-  });
-}
-
-function editBlog(id) {
-  db.collection('blog').doc(id).get().then(doc => {
-    const b = doc.data();
-    document.getElementById('blogId').value = id;
-    document.getElementById('b_title').value = b.title || '';
-    document.getElementById('b_tag').value = b.tag || '';
-    document.getElementById('b_preview').value = b.preview || '';
-    document.getElementById('b_content').value = b.content || '';
-    document.getElementById('b_link').value = b.link || '';
-    document.getElementById('b_order').value = b.order ?? 1;
-    document.getElementById('blogFormTitle').textContent = 'Edit Post';
-    document.getElementById('blogSubmitBtn').textContent = 'Save Changes';
-    document.getElementById('blogCancelBtn').style.display = 'inline-flex';
-    blogForm.scrollIntoView({ behavior: 'smooth' });
-  });
-}
-
-document.getElementById('blogCancelBtn').addEventListener('click', () => {
-  blogForm.reset();
-  document.getElementById('blogId').value = '';
-  document.getElementById('blogFormTitle').textContent = 'Add New Post';
-  document.getElementById('blogSubmitBtn').textContent = 'Add Post';
-  document.getElementById('blogCancelBtn').style.display = 'none';
-});
-
-blogForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  blogMsg.textContent = 'Saving…';
-  try {
-    const data = {
-      title: document.getElementById('b_title').value.trim(),
-      tag: document.getElementById('b_tag').value.trim(),
-      preview: document.getElementById('b_preview').value.trim(),
-      content: document.getElementById('b_content').value.trim(),
-      link: document.getElementById('b_link').value.trim(),
-      order: Number(document.getElementById('b_order').value) || 0,
-      updatedAt: new Date().toISOString()
-    };
-    const id = document.getElementById('blogId').value;
-    if (id) await db.collection('blog').doc(id).set(data);
-    else {
-      data.createdAt = new Date().toISOString();
-      await db.collection('blog').add(data);
+  // ---- AUTH ----
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById('loginView').style.display  = 'none';
+      document.getElementById('adminView').style.display  = 'block';
+      loadAll();
+    } else {
+      document.getElementById('loginView').style.display  = 'flex';
+      document.getElementById('adminView').style.display  = 'none';
     }
-    blogMsg.textContent = 'Saved!';
-    blogForm.reset();
-    document.getElementById('blogId').value = '';
-    document.getElementById('blogFormTitle').textContent = 'Add New Post';
-    document.getElementById('blogSubmitBtn').textContent = 'Add Post';
-    document.getElementById('blogCancelBtn').style.display = 'none';
-    loadBlog();
-    setTimeout(() => blogMsg.textContent = '', 2000);
-  } catch (err) {
-    blogMsg.textContent = 'Error: ' + err.message;
+  });
+
+  document.getElementById('loginBtn').addEventListener('click', () => {
+    const email  = document.getElementById('loginEmail').value.trim();
+    const pass   = document.getElementById('loginPass').value;
+    const errEl  = document.getElementById('loginErr');
+    errEl.textContent = '';
+    if (!email || !pass) { errEl.textContent = 'Please enter your email and password.'; return; }
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(err => { errEl.textContent = err.message; });
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+  // ---- TABS ----
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector(`.panel[data-panel="${btn.dataset.tab}"]`).classList.add('active');
+    });
+  });
+
+  // ---- HELPERS ----
+  async function uploadImageIfAny(fileInput, folder) {
+    const file = fileInput.files[0];
+    if (!file) return null;
+    if (CLOUDINARY_CONFIG.cloudName === 'YOUR_CLOUD_NAME') {
+      alert('Cloudinary not configured yet — paste an image URL instead.');
+      return null;
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+    fd.append('folder', folder);
+    const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`, { method:'POST', body:fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'Upload failed');
+    return data.secure_url;
   }
-});
 
+  function resolveImageUrl(value) {
+    const v = value.trim();
+    if (!v) return '';
+    if (v.startsWith('http') || v.startsWith('/')) return v;
+    const base = SITE_BASE_URL !== 'YOUR_VERCEL_URL' ? SITE_BASE_URL.replace(/\/$/, '') : '';
+    return base ? `${base}/images/${v}` : `images/${v}`;
+  }
 
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  function loadAll() {
+    loadProjects();
+    loadCerts();
+    loadTools();
+    loadBlog();
+  }
+
+  // ============================================================
+  // PROJECTS
+  // ============================================================
+  function loadProjects() {
+    db.collection('projects').orderBy('order').get().then(snap => {
+      const list = document.getElementById('projectsList');
+      list.innerHTML = '';
+      if (snap.empty) {
+        list.innerHTML = '<div class="empty-note">No extra projects yet. These show in "View More Work" on your site.</div>';
+        return;
+      }
+      snap.forEach(doc => {
+        const p = doc.data();
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${esc(p.name)} ${p.demoTag ? '<span style="font-size:.75rem;color:var(--ink3)">· Demo</span>' : ''}</div>
+            <div class="item-sub">${esc(p.type)} · order ${p.order ?? ''}</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost btn-small" data-id="${doc.id}" data-action="edit-project">Edit</button>
+            <button class="btn-ghost btn-small btn-danger" data-id="${doc.id}" data-action="del-project">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+      list.querySelectorAll('[data-action="edit-project"]').forEach(b => b.addEventListener('click', () => editProject(b.dataset.id)));
+      list.querySelectorAll('[data-action="del-project"]').forEach(b  => b.addEventListener('click',  () => delEntry('projects', b.dataset.id, loadProjects)));
+    });
+  }
+
+  function editProject(id) {
+    db.collection('projects').doc(id).get().then(doc => {
+      const p = doc.data();
+      document.getElementById('projectId').value       = id;
+      document.getElementById('p_name').value          = p.name || '';
+      document.getElementById('p_type').value          = p.type || '';
+      document.getElementById('p_description').value   = p.description || '';
+      document.getElementById('p_link').value          = p.link || '';
+      document.getElementById('p_order').value         = p.order ?? 1;
+      document.getElementById('p_imageUrl').value      = p.imageUrl || '';
+      document.getElementById('p_demoTag').checked     = !!p.demoTag;
+      document.getElementById('projectFormTitle').textContent  = 'Edit Project';
+      document.getElementById('projectSubmitBtn').textContent  = 'Save Changes';
+      document.getElementById('projectCancelBtn').style.display = 'inline-flex';
+      document.getElementById('projectForm').scrollIntoView({ behavior:'smooth' });
+    });
+  }
+
+  document.getElementById('projectCancelBtn').addEventListener('click', () => resetForm('project'));
+
+  document.getElementById('projectForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('projectMsg');
+    msg.textContent = 'Saving…';
+    try {
+      let imageUrl = resolveImageUrl(document.getElementById('p_imageUrl').value);
+      const up = await uploadImageIfAny(document.getElementById('p_imageFile'), 'projects');
+      if (up) imageUrl = up;
+      const data = {
+        name:        document.getElementById('p_name').value.trim(),
+        type:        document.getElementById('p_type').value.trim(),
+        description: document.getElementById('p_description').value.trim(),
+        link:        document.getElementById('p_link').value.trim(),
+        order:       Number(document.getElementById('p_order').value) || 0,
+        imageUrl,
+        demoTag:     document.getElementById('p_demoTag').checked
+      };
+      const id = document.getElementById('projectId').value;
+      if (id) await db.collection('projects').doc(id).set(data);
+      else    await db.collection('projects').add(data);
+      msg.textContent = 'Saved!';
+      resetForm('project');
+      loadProjects();
+      setTimeout(() => msg.textContent = '', 2000);
+    } catch (err) { document.getElementById('projectMsg').textContent = 'Error: ' + err.message; }
+  });
+
+  // ============================================================
+  // CERTIFICATIONS
+  // ============================================================
+  function loadCerts() {
+    db.collection('certifications').orderBy('order').get().then(snap => {
+      const list = document.getElementById('certsList');
+      list.innerHTML = '';
+      if (snap.empty) {
+        list.innerHTML = '<div class="empty-note">No extra certifications yet. These appear after your existing two.</div>';
+        return;
+      }
+      snap.forEach(doc => {
+        const c = doc.data();
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${esc(c.title)}</div>
+            <div class="item-sub">${esc(c.issuer)} · order ${c.order ?? ''}</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost btn-small" data-id="${doc.id}" data-action="edit-cert">Edit</button>
+            <button class="btn-ghost btn-small btn-danger" data-id="${doc.id}" data-action="del-cert">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+      list.querySelectorAll('[data-action="edit-cert"]').forEach(b => b.addEventListener('click', () => editCert(b.dataset.id)));
+      list.querySelectorAll('[data-action="del-cert"]').forEach(b  => b.addEventListener('click',  () => delEntry('certifications', b.dataset.id, loadCerts)));
+    });
+  }
+
+  function editCert(id) {
+    db.collection('certifications').doc(id).get().then(doc => {
+      const c = doc.data();
+      document.getElementById('certId').value          = id;
+      document.getElementById('c_title').value         = c.title || '';
+      document.getElementById('c_issuer').value        = c.issuer || '';
+      document.getElementById('c_description').value   = c.description || '';
+      document.getElementById('c_link').value          = c.link || '';
+      document.getElementById('c_order').value         = c.order ?? 1;
+      document.getElementById('c_imageUrl').value      = c.imageUrl || '';
+      document.getElementById('certFormTitle').textContent  = 'Edit Certification';
+      document.getElementById('certSubmitBtn').textContent  = 'Save Changes';
+      document.getElementById('certCancelBtn').style.display = 'inline-flex';
+      document.getElementById('certForm').scrollIntoView({ behavior:'smooth' });
+    });
+  }
+
+  document.getElementById('certCancelBtn').addEventListener('click', () => resetForm('cert'));
+
+  document.getElementById('certForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('certMsg');
+    msg.textContent = 'Saving…';
+    try {
+      let imageUrl = resolveImageUrl(document.getElementById('c_imageUrl').value);
+      const up = await uploadImageIfAny(document.getElementById('c_imageFile'), 'certifications');
+      if (up) imageUrl = up;
+      const data = {
+        title:       document.getElementById('c_title').value.trim(),
+        issuer:      document.getElementById('c_issuer').value.trim(),
+        description: document.getElementById('c_description').value.trim(),
+        link:        document.getElementById('c_link').value.trim(),
+        order:       Number(document.getElementById('c_order').value) || 0,
+        imageUrl
+      };
+      const id = document.getElementById('certId').value;
+      if (id) await db.collection('certifications').doc(id).set(data);
+      else    await db.collection('certifications').add(data);
+      msg.textContent = 'Saved!';
+      resetForm('cert');
+      loadCerts();
+      setTimeout(() => msg.textContent = '', 2000);
+    } catch (err) { document.getElementById('certMsg').textContent = 'Error: ' + err.message; }
+  });
+
+  // ============================================================
+  // TOOLS
+  // ============================================================
+  function loadTools() {
+    db.collection('tools').orderBy('order').get().then(snap => {
+      const list = document.getElementById('toolsList');
+      list.innerHTML = '';
+      if (snap.empty) {
+        list.innerHTML = '<div class="empty-note">No extra tools yet. These appear after your existing six.</div>';
+        return;
+      }
+      snap.forEach(doc => {
+        const t = doc.data();
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `
+          <div class="item-info">
+            <div class="item-title"><i class="${esc(t.icon)}"></i> ${esc(t.name)}</div>
+            <div class="item-sub">order ${t.order ?? ''}</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost btn-small" data-id="${doc.id}" data-action="edit-tool">Edit</button>
+            <button class="btn-ghost btn-small btn-danger" data-id="${doc.id}" data-action="del-tool">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+      list.querySelectorAll('[data-action="edit-tool"]').forEach(b => b.addEventListener('click', () => editTool(b.dataset.id)));
+      list.querySelectorAll('[data-action="del-tool"]').forEach(b  => b.addEventListener('click',  () => delEntry('tools', b.dataset.id, loadTools)));
+    });
+  }
+
+  function editTool(id) {
+    db.collection('tools').doc(id).get().then(doc => {
+      const t = doc.data();
+      document.getElementById('toolId').value          = id;
+      document.getElementById('t_name').value          = t.name || '';
+      document.getElementById('t_icon').value          = t.icon || '';
+      document.getElementById('t_description').value   = t.description || '';
+      document.getElementById('t_color').value         = t.color || 'yellow';
+      document.getElementById('t_order').value         = t.order ?? 1;
+      document.getElementById('toolFormTitle').textContent  = 'Edit Tool';
+      document.getElementById('toolSubmitBtn').textContent  = 'Save Changes';
+      document.getElementById('toolCancelBtn').style.display = 'inline-flex';
+      document.getElementById('toolForm').scrollIntoView({ behavior:'smooth' });
+    });
+  }
+
+  document.getElementById('toolCancelBtn').addEventListener('click', () => resetForm('tool'));
+
+  document.getElementById('toolForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('toolMsg');
+    msg.textContent = 'Saving…';
+    try {
+      const data = {
+        name:        document.getElementById('t_name').value.trim(),
+        icon:        document.getElementById('t_icon').value.trim(),
+        description: document.getElementById('t_description').value.trim(),
+        color:       document.getElementById('t_color').value,
+        order:       Number(document.getElementById('t_order').value) || 0
+      };
+      const id = document.getElementById('toolId').value;
+      if (id) await db.collection('tools').doc(id).set(data);
+      else    await db.collection('tools').add(data);
+      msg.textContent = 'Saved!';
+      resetForm('tool');
+      loadTools();
+      setTimeout(() => msg.textContent = '', 2000);
+    } catch (err) { document.getElementById('toolMsg').textContent = 'Error: ' + err.message; }
+  });
+
+  // ============================================================
+  // BLOG
+  // ============================================================
+  function loadBlog() {
+    db.collection('blog').orderBy('order').get().then(snap => {
+      const list = document.getElementById('blogList');
+      list.innerHTML = '';
+      if (snap.empty) {
+        list.innerHTML = '<div class="empty-note">No blog posts yet. Add one below — it\'ll appear live on your portfolio.</div>';
+        return;
+      }
+      snap.forEach(doc => {
+        const b = doc.data();
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${esc(b.title)}</div>
+            <div class="item-sub">${esc(b.tag)} · order ${b.order ?? ''}</div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost btn-small" data-id="${doc.id}" data-action="edit-blog">Edit</button>
+            <button class="btn-ghost btn-small btn-danger" data-id="${doc.id}" data-action="del-blog">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+      list.querySelectorAll('[data-action="edit-blog"]').forEach(b => b.addEventListener('click', () => editBlog(b.dataset.id)));
+      list.querySelectorAll('[data-action="del-blog"]').forEach(b  => b.addEventListener('click',  () => delEntry('blog', b.dataset.id, loadBlog)));
+    });
+  }
+
+  function editBlog(id) {
+    db.collection('blog').doc(id).get().then(doc => {
+      const b = doc.data();
+      document.getElementById('blogId').value       = id;
+      document.getElementById('b_title').value      = b.title || '';
+      document.getElementById('b_tag').value        = b.tag || '';
+      document.getElementById('b_preview').value    = b.preview || '';
+      document.getElementById('b_content').value    = b.content || '';
+      document.getElementById('b_link').value       = b.link || '';
+      document.getElementById('b_order').value      = b.order ?? 1;
+      document.getElementById('blogFormTitle').textContent  = 'Edit Post';
+      document.getElementById('blogSubmitBtn').textContent  = 'Save Changes';
+      document.getElementById('blogCancelBtn').style.display = 'inline-flex';
+      document.getElementById('blogForm').scrollIntoView({ behavior:'smooth' });
+    });
+  }
+
+  document.getElementById('blogCancelBtn').addEventListener('click', () => resetForm('blog'));
+
+  document.getElementById('blogForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('blogMsg');
+    msg.textContent = 'Saving…';
+    try {
+      const id   = document.getElementById('blogId').value;
+      const data = {
+        title:     document.getElementById('b_title').value.trim(),
+        tag:       document.getElementById('b_tag').value.trim(),
+        preview:   document.getElementById('b_preview').value.trim(),
+        content:   document.getElementById('b_content').value.trim(),
+        link:      document.getElementById('b_link').value.trim(),
+        order:     Number(document.getElementById('b_order').value) || 0,
+        updatedAt: new Date().toISOString()
+      };
+      if (!id) data.createdAt = new Date().toISOString();
+      if (id) await db.collection('blog').doc(id).set(data);
+      else    await db.collection('blog').add(data);
+      msg.textContent = 'Saved!';
+      resetForm('blog');
+      loadBlog();
+      setTimeout(() => msg.textContent = '', 2000);
+    } catch (err) { document.getElementById('blogMsg').textContent = 'Error: ' + err.message; }
+  });
+
+  // ============================================================
+  // SHARED
+  // ============================================================
+  function delEntry(collection, id, reload) {
+    if (!confirm("Delete this? This can't be undone.")) return;
+    db.collection(collection).doc(id).delete().then(reload);
+  }
+
+  function resetForm(prefix) {
+    document.getElementById(`${prefix}Form`).reset();
+    document.getElementById(`${prefix}Id`).value = '';
+    const label = prefix === 'cert' ? 'Certification'
+                : prefix === 'blog' ? 'Post'
+                : prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    document.getElementById(`${prefix}FormTitle`).textContent  = `Add New ${label}`;
+    document.getElementById(`${prefix}SubmitBtn`).textContent  = `Add ${label}`;
+    document.getElementById(`${prefix}CancelBtn`).style.display = 'none';
+  }
+
+} // end else (firebase configured)
+</script>
 </body>
 </html>
