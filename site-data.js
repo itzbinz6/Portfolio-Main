@@ -36,7 +36,7 @@
     const img  = p.imageUrl ? `<img src="${esc(p.imageUrl)}" alt="${esc(p.name)} screenshot" loading="lazy">` : '';
     const link = p.link ? `<a href="${esc(p.link)}" target="_blank" class="project-link">View Live <i class="fas fa-arrow-right"></i></a>` : '';
     return el(`
-      <div class="project-card fade-in">
+      <div class="project-card">
         <div class="project-preview">${img}</div>
         <div class="project-body">
           <div class="project-type">${esc(p.type)}</div>
@@ -49,7 +49,7 @@
 
   function skillCard(s) {
     return el(`
-      <div class="skill-card fade-in">
+      <div class="skill-card">
         <div class="skill-icon ${esc(s.color)}"><i class="${esc(s.icon)}"></i></div>
         <div class="skill-name">${esc(s.name)}</div>
         <div class="skill-desc">${esc(s.description)}</div>
@@ -64,7 +64,7 @@
       ? `<div class="cert-img-wrap"><img src="${esc(c.imageUrl)}" alt="${esc(c.title)} Certificate" loading="lazy"></div>`
       : '';
     return el(`
-      <div class="cert-card fade-in">
+      <div class="cert-card">
         <div class="cert-check"><i class="fas fa-check"></i></div>
         <div class="cert-issuer">${esc(c.issuer)}</div>
         <div class="cert-title">${esc(c.title)}</div>
