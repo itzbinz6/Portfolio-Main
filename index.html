@@ -112,6 +112,22 @@ section { padding: 88px 0; }
 
 /* PROJECTS */
 .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-top: 8px; }
+.work-more-wrap { display: flex; justify-content: center; margin-top: 32px; }
+.work-carousel { margin-top: 32px; }
+.work-track-wrap { overflow: hidden; }
+.work-track { display: flex; transition: transform .4s ease; }
+.work-page { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; flex: 0 0 100%; min-width: 0; }
+.work-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; }
+.work-btn { width: 40px; height: 40px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; transition: all .2s; }
+.work-btn:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.work-btn:disabled { opacity: .35; cursor: default; }
+.work-dots { display: flex; gap: 6px; align-items: center; }
+.work-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background .2s; }
+.work-dot.active { background: var(--accent); }
+.work-empty { font-size: 0.9375rem; color: var(--ink3); text-align: center; padding: 32px 0; }
+@media (max-width: 900px) { .work-page { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .work-page { grid-template-columns: 1fr; } }
+
 .project-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: box-shadow .2s, transform .2s; }
 .project-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
 .project-preview { height: 200px; overflow: hidden; background: var(--bg); }
@@ -721,6 +737,21 @@ BfY//9k=" alt="Ajayi Abisola Enoch" loading="lazy">
         </div>
       </div>
     </div>
+
+    <div class="work-more-wrap">
+      <button class="btn-ghost" id="workMoreBtn"><i class="fas fa-plus"></i> View More Work</button>
+    </div>
+
+    <div class="work-carousel" id="workCarousel" style="display:none;">
+      <div class="work-track-wrap">
+        <div class="work-track" id="workTrack"></div>
+      </div>
+      <div class="work-nav" id="workNav" style="display:none;">
+        <button class="work-btn" id="workPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+        <div class="work-dots" id="workDots"></div>
+        <button class="work-btn" id="workNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -731,7 +762,7 @@ BfY//9k=" alt="Ajayi Abisola Enoch" loading="lazy">
       <h2 class="section-title">What I know. What I use.</h2>
       <p class="section-sub">Certifications I've earned, tools I work with daily, and a few things I'm still learning.</p>
     </div>
-    <div class="skills-grid">
+    <div class="skills-grid" id="skillsGrid">
       <div class="skill-card fade-in">
         <div class="skill-icon yellow"><i class="fab fa-html5"></i></div>
         <div class="skill-name">HTML5 & CSS3</div>
@@ -773,7 +804,7 @@ BfY//9k=" alt="Ajayi Abisola Enoch" loading="lazy">
       <h2 class="section-title">Certifications</h2>
       <p class="section-sub">Formal proof of what I know, with more coming as I keep building.</p>
     </div>
-    <div class="certs-grid">
+    <div class="certs-grid" id="certsGrid">
       <div class="cert-card fade-in">
         <div class="cert-check"><i class="fas fa-check"></i></div>
         <div class="cert-issuer">freeCodeCamp · May 3, 2025</div>
@@ -1706,6 +1737,12 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/2Q==" alt="Claud
     <p>© 2026 Ajayi Abisola Enoch · Built by me, for me · <a href="https://wa.me/2348081595625" style="color:var(--accent)">Say hi on WhatsApp</a></p>
   </div>
 </footer>
+
+<!-- Firebase (for dynamically added Projects, Certifications & Tools — safe to leave even before configured) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="site-data.js"></script>
 
 <script>
 const themeBtn = document.getElementById('themeBtn');
