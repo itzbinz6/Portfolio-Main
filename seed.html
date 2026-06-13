@@ -7,8 +7,20 @@
   body { font-family: sans-serif; max-width: 600px; margin: 60px auto; padding: 24px; background: #fafaf8; color: #1a1a18; }
   h1 { font-size: 1.4rem; margin-bottom: 8px; }
   p { color: #52524c; margin-bottom: 24px; font-size: 0.9375rem; line-height: 1.6; }
-  button { padding: 14px 28px; background: #0a5c3c; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+
+  /* Login form */
+  #loginSection { margin-bottom: 28px; }
+  #loginSection label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 4px; color: #1a1a18; }
+  #loginSection input { display: block; width: 100%; box-sizing: border-box; padding: 10px 14px; margin-bottom: 12px; border: 1.5px solid #d4d4c8; border-radius: 8px; font-size: 0.9375rem; background: #fff; color: #1a1a18; }
+  #loginSection input:focus { outline: none; border-color: #0a5c3c; }
+  #loginStatus { font-size: 0.875rem; margin-bottom: 12px; min-height: 1.4em; }
+  .status-ok  { color: #0a5c3c; font-weight: 600; }
+  .status-err { color: #c0392b; }
+
+  button { padding: 14px 28px; background: #0a5c3c; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-right: 10px; }
   button:disabled { opacity: .5; cursor: default; }
+  #seedBtn { margin-top: 8px; }
+
   #log { margin-top: 24px; font-size: 0.875rem; line-height: 2; }
   .ok   { color: #0a5c3c; }
   .err  { color: #c0392b; }
@@ -17,15 +29,35 @@
 </head>
 <body>
 <h1>Firestore Seeder</h1>
-<p>This pushes all your existing projects, skills, certifications and blog posts into Firestore. Run it <strong>once</strong> — then delete or keep it private. It skips any collection that already has documents so it won't duplicate.</p>
-<button id="seedBtn">Seed Everything</button>
+<p>This pushes all your projects, tools, certifications, and blog posts into Firestore. Run it <strong>once</strong> — then keep this file private. It skips any collection that already has data so nothing duplicates.</p>
+
+<!-- Step 1: Login -->
+<div id="loginSection">
+  <label for="emailInput">Firebase Account Email</label>
+  <input type="email" id="emailInput" placeholder="you@example.com" />
+  <label for="passInput">Password</label>
+  <input type="password" id="passInput" placeholder="••••••••" />
+  <div id="loginStatus"></div>
+  <button id="loginBtn">Sign In</button>
+</div>
+
+<!-- Step 2: Seed (hidden until logged in) -->
+<div id="seedSection" style="display:none;">
+  <button id="seedBtn">Seed Everything</button>
+</div>
+
 <div id="log"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
-const log = document.getElementById('log');
+const log        = document.getElementById('log');
+const loginBtn   = document.getElementById('loginBtn');
+const seedBtn    = document.getElementById('seedBtn');
+const loginStatus = document.getElementById('loginStatus');
+
 function print(msg, cls) {
   const d = document.createElement('div');
   d.className = cls || '';
@@ -33,6 +65,7 @@ function print(msg, cls) {
   log.appendChild(d);
 }
 
+// ─── DATA ────────────────────────────────────────────────────────────────────
 const DATA = {
   projects: [
     { name: "Kachi's Kitchen",            type: "Restaurant · Food & Dining",                    description: "A home-cooking restaurant with a loyal customer base but no website to show for it. Built a full landing page with menu showcase, WhatsApp ordering, and Google reviews integration — so new customers could actually find them.", link: "https://kachidemo0.vercel.app/",        imageUrl: "images/kachis-kitchen.png",              demoTag: true,  order: 10  },
@@ -49,34 +82,58 @@ const DATA = {
     { name: "Berkshire Hathaway Redesign (v2)", type: "Corporate · Redesign Concept (Next.js & React)", description: "The same Berkshire Hathaway redesign as v1, rebuilt from the ground up in Next.js and React. Same design, restructured as reusable components — taking the same concept from static HTML into a modern component-based stack.", link: "https://berkshiredemo-v2.vercel.app/", imageUrl: "",                                       demoTag: false, order: 120 },
   ],
   tools: [
-    { name: "HTML5 & CSS3",       icon: "fab fa-html5",        color: "yellow", description: "Semantic markup, custom layouts, animations, full responsive design from 320px up.",                                                                                    order: 10 },
-    { name: "JavaScript",         icon: "fab fa-js",           color: "blue",   description: "Vanilla JS for interactivity — carousels, form validation, scroll effects, localStorage.",                                                                              order: 20 },
-    { name: "Python & Java",      icon: "fab fa-python",       color: "green",  description: "Core programming languages from my Computer Science degree at Landmark University. Used for algorithms, logic, and backend concepts.",                                   order: 30 },
-    { name: "Git & VS Code",      icon: "fab fa-git-alt",      color: "purple", description: "Daily driver tools. Version control with Git, development in VS Code — standard professional workflow.",                                                                 order: 40 },
-    { name: "IT Support",         icon: "fas fa-network-wired",color: "red",    description: "Real-world experience from Polaris Bank internship — networks, hardware troubleshooting, branch infrastructure support.",                                                order: 50 },
-    { name: "Blockchain (Learning)", icon: "fas fa-cube",      color: "teal",   description: "Currently learning Solidity and Web3 development — building toward smart contracts and decentralised apps.",                                                             order: 60 },
+    { name: "HTML5 & CSS3",          icon: "fab fa-html5",         color: "yellow", description: "Semantic markup, custom layouts, animations, full responsive design from 320px up.",                                                                                   order: 10 },
+    { name: "JavaScript",            icon: "fab fa-js",            color: "blue",   description: "Vanilla JS for interactivity — carousels, form validation, scroll effects, localStorage.",                                                                             order: 20 },
+    { name: "Python & Java",         icon: "fab fa-python",        color: "green",  description: "Core programming languages from my Computer Science degree at Landmark University. Used for algorithms, logic, and backend concepts.",                                  order: 30 },
+    { name: "Git & VS Code",         icon: "fab fa-git-alt",       color: "purple", description: "Daily driver tools. Version control with Git, development in VS Code — standard professional workflow.",                                                                order: 40 },
+    { name: "IT Support",            icon: "fas fa-network-wired", color: "red",    description: "Real-world experience from Polaris Bank internship — networks, hardware troubleshooting, branch infrastructure support.",                                               order: 50 },
+    { name: "Blockchain (Learning)", icon: "fas fa-cube",          color: "teal",   description: "Currently learning Solidity and Web3 development — building toward smart contracts and decentralised apps.",                                                            order: 60 },
   ],
   certifications: [
     { title: "Responsive Web Design", issuer: "freeCodeCamp · May 3, 2025", description: "Developer Certification representing approximately 300 hours of work. Covers semantic HTML5, CSS3, Flexbox, Grid, and responsive design principles.", link: "https://www.freecodecamp.org/certification/itz_binz/responsive-web-design", imageUrl: "images/responsive-web-design-cert.jpg", order: 10 },
     { title: "Claude 101",            issuer: "Anthropic · May 5, 2026",    description: "Fundamentals of working with Claude — prompt engineering, use cases, and building AI-assisted workflows. (Certificate No. 2m7vg45jcgzf)",                link: "",                                                                          imageUrl: "images/claude-101-cert.png",            order: 20 },
   ],
   blog: [
-    { title: "I built six websites nobody asked for. Here's why.",                              tag: "How I built it",    preview: "The idea of cold-pitching with a demo site sounds obvious once you hear it. But most people don't do it. This is the thinking behind building Kachi's Kitchen, BYG, Rossycakes — all unprompted — and what I learned from each one.", content: "", link: "", order: 10, createdAt: new Date().toISOString() },
+    { title: "I built six websites nobody asked for. Here's why.",                                   tag: "How I built it",    preview: "The idea of cold-pitching with a demo site sounds obvious once you hear it. But most people don't do it. This is the thinking behind building Kachi's Kitchen, BYG, Rossycakes — all unprompted — and what I learned from each one.", content: "", link: "", order: 10, createdAt: new Date().toISOString() },
     { title: "Most small businesses in Nigeria are invisible on the internet and they don't know it.", tag: "Things I noticed", preview: "They have customers, WhatsApp groups, loyal regulars — but type their name into Google and nothing comes up. This is what that gap looks like, and why it matters more than people think.",                                content: "", link: "", order: 20, createdAt: new Date().toISOString() },
-    { title: "What it actually feels like to learn blockchain from scratch.",                   tag: "Learning in public", preview: "No bootcamp. No cohort. Just documentation, Claude, and a lot of tabs open. An honest note on what the early days of learning something hard actually feel like when you're doing it alone.",                                        content: "", link: "", order: 30, createdAt: new Date().toISOString() },
+    { title: "What it actually feels like to learn blockchain from scratch.",                         tag: "Learning in public", preview: "No bootcamp. No cohort. Just documentation, Claude, and a lot of tabs open. An honest note on what the early days of learning something hard actually feel like when you're doing it alone.",                                       content: "", link: "", order: 30, createdAt: new Date().toISOString() },
   ],
 };
 
-document.getElementById('seedBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('seedBtn');
-  btn.disabled = true;
-  log.innerHTML = '';
+// ─── STEP 1: LOGIN ────────────────────────────────────────────────────────────
+loginBtn.addEventListener('click', async () => {
+  const email = document.getElementById('emailInput').value.trim();
+  const pass  = document.getElementById('passInput').value;
 
-  if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
-    print('❌ Firebase not configured — fill in firebase-config.js first.', 'err');
-    btn.disabled = false;
+  if (!email || !pass) {
+    loginStatus.className = 'status-err';
+    loginStatus.textContent = 'Enter your email and password first.';
     return;
   }
+
+  loginBtn.disabled = true;
+  loginStatus.className = '';
+  loginStatus.textContent = 'Signing in…';
+
+  try {
+    const auth = firebase.auth();
+    await auth.signInWithEmailAndPassword(email, pass);
+    loginStatus.className = 'status-ok';
+    loginStatus.textContent = `✅ Signed in as ${email}`;
+    document.getElementById('loginSection').style.opacity = '0.5';
+    document.getElementById('loginSection').style.pointerEvents = 'none';
+    document.getElementById('seedSection').style.display = 'block';
+  } catch (err) {
+    loginStatus.className = 'status-err';
+    loginStatus.textContent = `❌ ${err.message}`;
+    loginBtn.disabled = false;
+  }
+});
+
+// ─── STEP 2: SEED ─────────────────────────────────────────────────────────────
+seedBtn.addEventListener('click', async () => {
+  seedBtn.disabled = true;
+  log.innerHTML = '';
 
   const db = firebase.firestore();
 
