@@ -205,6 +205,8 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
 .post-title { font-family: 'Playfair Display', serif; font-size: 1.0625rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; line-height: 1.4; }
 .post-preview { font-size: 0.875rem; color: var(--ink2); line-height: 1.6; margin-bottom: 12px; }
 .post-empty { border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 24px; text-align: center; font-size: 0.875rem; color: var(--ink3); }
+.projects-loading { padding: 32px; text-align: center; color: var(--ink3); font-size: 0.9375rem; grid-column: 1/-1; }
+.projects-loading i { margin-right: 8px; color: var(--accent); }
 
 /* ANIMATIONS */
 .fade-in { opacity: 0; transform: translateY(20px); transition: opacity .5s ease, transform .5s ease; }
@@ -309,73 +311,8 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
       <h2 class="section-title">Things I've built.</h2>
       <p class="section-sub">These are all demos — sites I built for real businesses as cold pitches or practice. No client brief, just me deciding a business deserved a better web presence and building it.</p>
     </div>
-    <div class="projects-grid">
-      <div class="project-card fade-in">
-        <div class="project-preview">
-          <img src="images/kachis-kitchen.png" alt="Kachi's Kitchen screenshot" loading="lazy">
-        </div>
-        <div class="project-body">
-          <div class="project-type">Restaurant · Food & Dining</div>
-          <div class="project-name">Kachi's Kitchen <span class="demo-tag">Demo</span></div>
-          <p class="project-desc">A home-cooking restaurant with a loyal customer base but no website to show for it. Built a full landing page with menu showcase, WhatsApp ordering, and Google reviews integration — so new customers could actually find them.</p>
-          <a href="https://kachidemo0.vercel.app/" target="_blank" class="project-link">View Live <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-      <div class="project-card fade-in">
-        <div class="project-preview">
-          <img src="images/backyard-grill.png" alt="BYG Demo screenshot" loading="lazy">
-        </div>
-        <div class="project-body">
-          <div class="project-type">Restaurant · Ikeja, Lagos</div>
-          <div class="project-name">The Backyard Grill <span class="demo-tag">Demo</span></div>
-          <p class="project-desc">A beloved grill spot on Opebi Road with strong word-of-mouth but nothing online to back it up. Built a full landing page with their story, menu, testimonials, and a direct WhatsApp order link.</p>
-          <a href="https://bygdemo0.vercel.app/" target="_blank" class="project-link">View Live <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-      <div class="project-card fade-in">
-        <div class="project-preview">
-          <img src="images/sato-kitchen.png" alt="Sato Demo screenshot" loading="lazy">
-        </div>
-        <div class="project-body">
-          <div class="project-type">West African Restaurant · Brixton, London</div>
-          <div class="project-name">Sato's Kitchen <span class="demo-tag">Demo</span></div>
-          <p class="project-desc">A women-owned West African restaurant in Brixton with 4.9 stars on Google but no proper web presence. Built a landing page that matches the warmth and quality of the food — table reservations, menu, and their story.</p>
-          <a href="https://satodemo0.vercel.app/" target="_blank" class="project-link">View Live <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-      <div class="project-card fade-in">
-        <div class="project-preview">
-          <img src="images/rossycakes.png" alt="Rossycakes screenshot" loading="lazy">
-        </div>
-        <div class="project-body">
-          <div class="project-type">Bakery · Food & Events</div>
-          <div class="project-name">Rossycakes & Events <span class="demo-tag">Demo</span></div>
-          <p class="project-desc">A cake studio doing beautiful work in Ilorin with nothing but Instagram to show it. Built a landing page with a product gallery, occasion categories, live review system, and a clear order CTA.</p>
-          <a href="https://rossydemo0.vercel.app/" target="_blank" class="project-link">View Live <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-      <div class="project-card fade-in">
-        <div class="project-preview">
-          <img src="images/cup-and-cup.png" alt="Cup Demo screenshot" loading="lazy">
-        </div>
-        <div class="project-body">
-          <div class="project-type">Café · Plano, Texas</div>
-          <div class="project-name">Cup & Cup <span class="demo-tag">Demo</span></div>
-          <p class="project-desc">Their existing Wix site was over-branded, hard to navigate, and had a noindex tag quietly blocking them from Google. Built a clean demo with a proper menu, their story, and mobile-first layout that actually works for customers.</p>
-          <a href="https://cupdemo0.vercel.app/" target="_blank" class="project-link">View Live <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-      <div class="project-card fade-in">
-        <div class="project-preview">
-          <img src="images/12baskets.png" alt="12 Baskets Foods screenshot" loading="lazy">
-        </div>
-        <div class="project-body">
-          <div class="project-type">Food & Catering · Lagos</div>
-          <div class="project-name">12 Baskets Foods <span class="demo-tag">Demo</span></div>
-          <p class="project-desc">Their original site had no way to keep the menu current. Built a new one with a live database — admins can update the menu directly without touching any code. The site always reflects what's actually available.</p>
-          <a href="https://12-baskets.vercel.app/" target="_blank" class="project-link">View Live <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
+    <div class="projects-grid" id="projectsGrid">
+      <div class="projects-loading" id="projectsLoading"><i class="fas fa-spinner fa-spin"></i> Loading projects…</div>
     </div>
 
     <div class="work-more-wrap">
@@ -403,36 +340,7 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
       <p class="section-sub">Certifications I've earned, tools I work with daily, and a few things I'm still learning.</p>
     </div>
     <div class="skills-grid" id="skillsGrid">
-      <div class="skill-card fade-in">
-        <div class="skill-icon yellow"><i class="fab fa-html5"></i></div>
-        <div class="skill-name">HTML5 & CSS3</div>
-        <div class="skill-desc">Semantic markup, custom layouts, animations, full responsive design from 320px up.</div>
-      </div>
-      <div class="skill-card fade-in">
-        <div class="skill-icon blue"><i class="fab fa-js"></i></div>
-        <div class="skill-name">JavaScript</div>
-        <div class="skill-desc">Vanilla JS for interactivity — carousels, form validation, scroll effects, localStorage.</div>
-      </div>
-      <div class="skill-card fade-in">
-        <div class="skill-icon green"><i class="fab fa-python"></i></div>
-        <div class="skill-name">Python & Java</div>
-        <div class="skill-desc">Core programming languages from my Computer Science degree at Landmark University. Used for algorithms, logic, and backend concepts.</div>
-      </div>
-      <div class="skill-card fade-in">
-        <div class="skill-icon purple"><i class="fab fa-git-alt"></i></div>
-        <div class="skill-name">Git & VS Code</div>
-        <div class="skill-desc">Daily driver tools. Version control with Git, development in VS Code — standard professional workflow.</div>
-      </div>
-      <div class="skill-card fade-in">
-        <div class="skill-icon red"><i class="fas fa-network-wired"></i></div>
-        <div class="skill-name">IT Support</div>
-        <div class="skill-desc">Real-world experience from Polaris Bank internship — networks, hardware troubleshooting, branch infrastructure support.</div>
-      </div>
-      <div class="skill-card fade-in">
-        <div class="skill-icon teal"><i class="fas fa-cube"></i></div>
-        <div class="skill-name">Blockchain (Learning)</div>
-        <div class="skill-desc">Currently learning Solidity and Web3 development — building toward smart contracts and decentralised apps.</div>
-      </div>
+      <div class="projects-loading" id="skillsLoading"><i class="fas fa-spinner fa-spin"></i> Loading skills…</div>
     </div>
   </div>
 </section>
@@ -445,25 +353,7 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
       <p class="section-sub">Formal proof of what I know, with more coming as I keep building.</p>
     </div>
     <div class="certs-grid" id="certsGrid">
-      <div class="cert-card fade-in">
-        <div class="cert-check"><i class="fas fa-check"></i></div>
-        <div class="cert-issuer">freeCodeCamp · May 3, 2025</div>
-        <div class="cert-title">Responsive Web Design</div>
-        <div class="cert-desc">Developer Certification representing approximately 300 hours of work. Covers semantic HTML5, CSS3, Flexbox, Grid, and responsive design principles.</div>
-        <a href="https://www.freecodecamp.org/certification/itz_binz/responsive-web-design" target="_blank" class="project-link" style="margin-bottom:14px;display:inline-flex"><i class="fas fa-external-link-alt"></i> Verify Certificate</a>
-        <div class="cert-img-wrap">
-          <img src="images/responsive-web-design-cert.jpg" alt="Responsive Web Design Certificate" loading="lazy">
-        </div>
-      </div>
-      <div class="cert-card fade-in">
-        <div class="cert-check"><i class="fas fa-check"></i></div>
-        <div class="cert-issuer">Anthropic · May 5, 2026</div>
-        <div class="cert-title">Claude 101</div>
-        <div class="cert-desc">Fundamentals of working with Claude — prompt engineering, use cases, and building AI-assisted workflows. (Certificate No. 2m7vg45jcgzf)</div>
-        <div class="cert-img-wrap">
-          <img src="images/claude-101-cert.png" alt="Claude 101 Certificate" loading="lazy">
-        </div>
-      </div>
+      <div class="projects-loading" id="certsLoading"><i class="fas fa-spinner fa-spin"></i> Loading certifications…</div>
     </div>
   </div>
 </section>
@@ -475,29 +365,11 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
       <h2 class="section-title">Things I noticed. Things I built. Things I'm figuring out.</h2>
       <p class="section-sub">Not a tutorial blog. Not a personal diary. Just writing when something is worth saying — behind the scenes of projects, observations nobody else is making, and honest notes from learning in public.</p>
     </div>
-    <div class="fade-in">
-      <div class="post-card">
-        <span class="post-tag">How I built it</span>
-        <div class="post-title">I built six websites nobody asked for. Here's why.</div>
-        <p class="post-preview">The idea of cold-pitching with a demo site sounds obvious once you hear it. But most people don't do it. This is the thinking behind building Kachi's Kitchen, BYG, Rossycakes — all unprompted — and what I learned from each one.</p>
-      </div>
-      <div class="post-card">
-        <span class="post-tag">Things I noticed</span>
-        <div class="post-title">Most small businesses in Nigeria are invisible on the internet and they don't know it.</div>
-        <p class="post-preview">They have customers, WhatsApp groups, loyal regulars — but type their name into Google and nothing comes up. This is what that gap looks like, and why it matters more than people think.</p>
-      </div>
-      <div class="post-card">
-        <span class="post-tag">Learning in public</span>
-        <div class="post-title">What it actually feels like to learn blockchain from scratch.</div>
-        <p class="post-preview">No bootcamp. No cohort. Just documentation, Claude, and a lot of tabs open. An honest note on what the early days of learning something hard actually feel like when you're doing it alone.</p>
-      </div>
-      <div class="post-empty" id="blogMore">More posts coming. Writing when something is worth saying.</div>
+    <div class="fade-in" id="blogPostsWrap">
+      <div class="projects-loading" id="blogLoading"><i class="fas fa-spinner fa-spin"></i> Loading posts…</div>
     </div>
   </div>
 </section>
-
-<!-- Firebase blog posts append here via site-data.js -->
-<div id="blogPosts" style="display:none;"></div>
 
 <section id="faq">
   <div class="container">
