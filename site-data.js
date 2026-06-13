@@ -104,77 +104,84 @@
     carousel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
-  // ---- Bail if Firebase not ready ----
-  if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
-    ['projectsLoading','skillsLoading','certsLoading','blogLoading'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = '';
-    });
-    return;
+  // ---- Wait for Firebase, then fetch ----
+  function waitForFirebase(retries, callback) {
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+      callback();
+    } else if (retries > 0) {
+      setTimeout(() => waitForFirebase(retries - 1, callback), 200);
+    } else {
+      // Firebase never loaded — clear spinners silently
+      ['projectsLoading','skillsLoading','certsLoading','blogLoading'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+      });
+    }
   }
 
-  const db = firebase.firestore();
+  waitForFirebase(25, function () {
+    const db = firebase.firestore();
 
-  // ---- PROJECTS ----
-  // First 6 by order → main grid
-  // Remaining → carousel pages of 6
-  db.collection('projects').orderBy('order').get().then(snap => {
-    clearLoader('projectsLoading');
-    if (snap.empty) return;
+    // ---- PROJECTS ----
+    db.collection('projects').orderBy('order').get().then(snap => {
+      clearLoader('projectsLoading');
+      if (snap.empty) return;
 
-    const all = [];
-    snap.forEach(doc => all.push(doc.data()));
+      const all   = [];
+      snap.forEach(doc => all.push(doc.data()));
 
-    const main  = all.slice(0, 6);
-    const extra = all.slice(6);
+      const main  = all.slice(0, 6);
+      const extra = all.slice(6);
 
-    // Render main grid
-    main.forEach(p => projectsGrid.appendChild(projectCard(p)));
+      // Render main grid
+      main.forEach(p => projectsGrid.appendChild(projectCard(p)));
 
-    // Render extra into carousel pages
-    if (extra.length > 0) {
-      const pages = [];
-      for (let i = 0; i < extra.length; i += 6) pages.push(extra.slice(i, i + 6));
+      // Render extra into carousel pages
+      if (extra.length > 0) {
+        const pages = [];
+        for (let i = 0; i < extra.length; i += 6) pages.push(extra.slice(i, i + 6));
 
-      pages.forEach((cardsInPage, idx) => {
-        const page = el('<div class="work-page"></div>');
-        cardsInPage.forEach(p => page.appendChild(projectCard(p)));
-        track.appendChild(page);
-        if (pages.length > 1) {
-          const dot = el('<div class="work-dot"></div>');
-          if (idx === 0) dot.classList.add('active');
-          dotsWrap.appendChild(dot);
-        }
-      });
+        pages.forEach((cardsInPage, idx) => {
+          const page = el('<div class="work-page"></div>');
+          cardsInPage.forEach(p => page.appendChild(projectCard(p)));
+          track.appendChild(page);
+          if (pages.length > 1) {
+            const dot = el('<div class="work-dot"></div>');
+            if (idx === 0) dot.classList.add('active');
+            dotsWrap.appendChild(dot);
+          }
+        });
 
-      pageCount = pages.length;
-      if (pageCount > 1) nav.style.display = 'flex';
-      updateCarousel();
-      moreBtn.style.display = 'flex';
-    } else {
-      moreBtn.style.display = 'none';
-    }
-  }).catch(() => clearLoader('projectsLoading'));
+        pageCount = pages.length;
+        if (pageCount > 1) nav.style.display = 'flex';
+        updateCarousel();
+        moreBtn.style.display = 'flex';
+      } else {
+        moreBtn.style.display = 'none';
+      }
+    }).catch(() => clearLoader('projectsLoading'));
 
-  // ---- SKILLS ----
-  db.collection('tools').orderBy('order').get().then(snap => {
-    clearLoader('skillsLoading');
-    snap.forEach(doc => skillsGrid.appendChild(skillCard(doc.data())));
-  }).catch(() => clearLoader('skillsLoading'));
+    // ---- SKILLS ----
+    db.collection('tools').orderBy('order').get().then(snap => {
+      clearLoader('skillsLoading');
+      snap.forEach(doc => skillsGrid.appendChild(skillCard(doc.data())));
+    }).catch(() => clearLoader('skillsLoading'));
 
-  // ---- CERTIFICATIONS ----
-  db.collection('certifications').orderBy('order').get().then(snap => {
-    clearLoader('certsLoading');
-    snap.forEach(doc => certsGrid.appendChild(certCard(doc.data())));
-  }).catch(() => clearLoader('certsLoading'));
+    // ---- CERTIFICATIONS ----
+    db.collection('certifications').orderBy('order').get().then(snap => {
+      clearLoader('certsLoading');
+      snap.forEach(doc => certsGrid.appendChild(certCard(doc.data())));
+    }).catch(() => clearLoader('certsLoading'));
 
-  // ---- BLOG ----
-  db.collection('blog').orderBy('order').get().then(snap => {
-    clearLoader('blogLoading');
-    if (snap.empty) return;
-    const blogWrap = document.getElementById('blogPostsWrap');
-    if (!blogWrap) return;
-    snap.forEach(doc => blogWrap.appendChild(blogCard(doc.data())));
-  }).catch(() => clearLoader('blogLoading'));
+    // ---- BLOG ----
+    db.collection('blog').orderBy('order').get().then(snap => {
+      clearLoader('blogLoading');
+      if (snap.empty) return;
+      const blogWrap = document.getElementById('blogPostsWrap');
+      if (!blogWrap) return;
+      snap.forEach(doc => blogWrap.appendChild(blogCard(doc.data())));
+    }).catch(() => clearLoader('blogLoading'));
+
+  });
 
 })();
