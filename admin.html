@@ -70,6 +70,38 @@ form.entry-form { background:var(--surface); border:1px solid var(--border); bor
 .form-actions { display:flex; gap:10px; align-items:center; }
 .field-hint { font-size:0.75rem; color:var(--ink3); }
 
+/* Session Timer */
+.session-timer {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 12px; border-radius:8px; font-size:0.8125rem; font-weight:600;
+  background:var(--accent-soft); color:var(--accent); border:1.5px solid var(--accent);
+  transition:background .3s, color .3s, border-color .3s;
+  font-family:'DM Sans',sans-serif; white-space:nowrap;
+}
+.session-timer.warning {
+  background:#FFF3CD; color:#856404; border-color:#FBBF24;
+}
+.session-timer.danger {
+  background:#FDECEA; color:#C0392B; border-color:#C0392B;
+  animation: pulse-danger 1s ease-in-out infinite;
+}
+@keyframes pulse-danger {
+  0%,100% { opacity:1; } 50% { opacity:.6; }
+}
+
+/* Logout overlay */
+.logout-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+  z-index:9999; align-items:center; justify-content:center;
+}
+.logout-overlay.visible { display:flex; }
+.logout-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:36px 40px; max-width:360px; width:90%; text-align:center;
+}
+.logout-card h2 { font-size:1.25rem; margin-bottom:10px; }
+.logout-card p  { color:var(--ink2); font-size:0.9375rem; margin-bottom:24px; }
+
 @media (max-width:600px) {
   .field-row { grid-template-columns:1fr; }
   .item { flex-direction:column; align-items:flex-start; }
@@ -104,8 +136,25 @@ form.entry-form { background:var(--surface); border:1px solid var(--border); bor
 <div id="adminView" style="display:none;">
   <header class="top">
     <h1>Site Admin</h1>
-    <button class="btn-ghost" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="session-timer" id="sessionTimer">
+        <i class="fas fa-clock"></i>
+        <span id="timerDisplay">10:00</span>
+      </div>
+      <button class="btn-ghost" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
   </header>
+
+  <!-- Auto-logout overlay -->
+  <div class="logout-overlay" id="logoutOverlay">
+    <div class="logout-card">
+      <h2>Session Expired</h2>
+      <p>You've been inactive for 10 minutes and were automatically signed out for security.</p>
+      <button class="btn-primary" style="width:100%;justify-content:center;" onclick="document.getElementById('logoutOverlay').classList.remove('visible')">
+        <i class="fas fa-sign-in-alt"></i> Sign In Again
+      </button>
+    </div>
+  </div>
 
   <div class="container">
     <div class="tabs">
@@ -279,10 +328,13 @@ if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) 
     if (user) {
       document.getElementById('loginView').style.display  = 'none';
       document.getElementById('adminView').style.display  = 'block';
+      startSessionTimer();
       loadAll();
     } else {
       document.getElementById('loginView').style.display  = 'flex';
       document.getElementById('adminView').style.display  = 'none';
+      clearInterval(timerInterval);
+      clearTimeout(logoutTimeout);
     }
   });
 
@@ -298,7 +350,56 @@ if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) 
 
   document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
 
-  // ---- TABS ----
+  // ============================================================
+  // AUTO-LOGOUT TIMER (10 minutes of inactivity)
+  // ============================================================
+  const TIMEOUT_MS   = 10 * 60 * 1000; // 10 minutes
+  const WARNING_MS   = 2  * 60 * 1000; // warn at 2 min left
+  const DANGER_MS    = 60 * 1000;       // danger at 1 min left
+  let   timerInterval = null;
+  let   logoutTimeout = null;
+  let   sessionStart  = Date.now();
+
+  function startSessionTimer() {
+    clearInterval(timerInterval);
+    clearTimeout(logoutTimeout);
+    sessionStart = Date.now();
+
+    const timerEl   = document.getElementById('sessionTimer');
+    const displayEl = document.getElementById('timerDisplay');
+
+    timerInterval = setInterval(() => {
+      const elapsed   = Date.now() - sessionStart;
+      const remaining = Math.max(0, TIMEOUT_MS - elapsed);
+      const mins      = Math.floor(remaining / 60000);
+      const secs      = Math.floor((remaining % 60000) / 1000);
+      displayEl.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+      // Update color state
+      timerEl.classList.remove('warning','danger');
+      if (remaining <= DANGER_MS)  timerEl.classList.add('danger');
+      else if (remaining <= WARNING_MS) timerEl.classList.add('warning');
+    }, 1000);
+
+    logoutTimeout = setTimeout(() => {
+      clearInterval(timerInterval);
+      document.getElementById('logoutOverlay').classList.add('visible');
+      auth.signOut();
+    }, TIMEOUT_MS);
+  }
+
+  function resetTimer() {
+    if (document.getElementById('adminView').style.display !== 'none') {
+      startSessionTimer();
+    }
+  }
+
+  // Reset on any user activity
+  ['mousemove','keydown','click','scroll','touchstart','input'].forEach(evt =>
+    document.addEventListener(evt, resetTimer, { passive: true })
+  );
+
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
