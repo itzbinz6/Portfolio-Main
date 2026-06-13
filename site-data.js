@@ -1,11 +1,9 @@
 // ============================================================
-// SITE DATA — pulls extra Projects, Certifications & Tools
-// from Firebase Firestore and renders them alongside the
-// hardcoded ones already in index.html.
+// SITE DATA — pulls Blog Posts, extra Projects, Certifications
+// & Tools from Firebase Firestore and renders them on the page.
 //
-// If Firebase isn't configured yet (see firebase-config.js),
-// or a collection is empty, this just does nothing — the page
-// looks exactly the same as before.
+// Hardcoded items in index.html stay as-is. Firebase adds on top.
+// If Firebase isn't configured, this does nothing silently.
 // ============================================================
 
 (function () {
@@ -71,6 +69,24 @@
       </div>`);
   }
 
+  function blogCard(b) {
+    const link = b.link
+      ? `<a href="${esc(b.link)}" target="_blank" class="project-link" style="font-size:0.875rem;">Read more <i class="fas fa-arrow-right"></i></a>`
+      : '';
+    const content = b.content
+      ? `<p class="post-preview" style="margin-top:8px;border-top:1px solid var(--border);padding-top:12px;">${esc(b.content)}</p>`
+      : '';
+    return el(`
+      <div class="post-card">
+        <span class="post-tag">${esc(b.tag)}</span>
+        <div class="post-title">${esc(b.title)}</div>
+        <p class="post-preview">${esc(b.preview)}</p>
+        ${content}
+        ${link}
+      </div>`);
+  }
+
+  // ---- Carousel controls ----
   function updateCarousel() {
     track.style.transform = `translateX(-${current * 100}%)`;
     prevBtn.disabled = current === 0;
@@ -94,15 +110,35 @@
   if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) return;
   const db = firebase.firestore();
 
+  // ---- Blog: append new posts from Firebase after the hardcoded 3 ----
+  db.collection('blog').orderBy('order').get().then(snap => {
+    if (snap.empty) return;
+    const blogContainer = document.querySelector('#blog .fade-in') || document.getElementById('blogPosts');
+    const moreNote = document.getElementById('blogMore');
+    if (!blogContainer) return;
+
+    snap.forEach(doc => {
+      const card = blogCard(doc.data());
+      // insert before the "more posts coming" placeholder
+      if (moreNote && moreNote.parentNode === blogContainer) {
+        blogContainer.insertBefore(card, moreNote);
+      } else {
+        blogContainer.appendChild(card);
+      }
+    });
+  }).catch(() => {});
+
   // ---- Certifications: append after the existing 2 ----
   db.collection('certifications').orderBy('order').get().then(snap => {
     const grid = document.getElementById('certsGrid');
+    if (!grid) return;
     snap.forEach(doc => grid.appendChild(certCard(doc.data())));
   }).catch(() => {});
 
   // ---- Tools: append after the existing 6 ----
   db.collection('tools').orderBy('order').get().then(snap => {
     const grid = document.getElementById('skillsGrid');
+    if (!grid) return;
     snap.forEach(doc => grid.appendChild(toolCard(doc.data())));
   }).catch(() => {});
 

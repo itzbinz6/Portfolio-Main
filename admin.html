@@ -112,6 +112,7 @@ form.entry-form { background:var(--surface); border:1px solid var(--border); bor
       <button class="tab-btn active" data-tab="projects">Projects</button>
       <button class="tab-btn" data-tab="certifications">Certifications</button>
       <button class="tab-btn" data-tab="tools">Tools</button>
+      <button class="tab-btn" data-tab="blog">Blog</button>
     </div>
 
     <!-- PROJECTS PANEL -->
@@ -135,7 +136,7 @@ form.entry-form { background:var(--surface); border:1px solid var(--border); bor
           <label>Image</label>
           <input type="file" id="p_imageFile" accept="image/*">
           <input type="url" id="p_imageUrl" placeholder="...or paste an image URL directly">
-          <div class="field-hint">Upload a file (goes to Firebase Storage) OR paste a URL. Leave both empty for no image.</div>
+          <div class="field-hint">Upload a file (goes to Cloudinary), paste a full URL, OR just type the filename e.g. 12baskets.png — it auto-prefixes your site URL.</div>
         </div>
         <div class="checkbox-row"><input type="checkbox" id="p_demoTag"> <label for="p_demoTag">Show "Demo" tag</label></div>
         <div class="form-actions">
@@ -167,7 +168,7 @@ form.entry-form { background:var(--surface); border:1px solid var(--border); bor
           <label>Certificate Image</label>
           <input type="file" id="c_imageFile" accept="image/*">
           <input type="url" id="c_imageUrl" placeholder="...or paste an image URL directly">
-          <div class="field-hint">Upload a file (goes to Firebase Storage) OR paste a URL. Leave both empty for no image.</div>
+          <div class="field-hint">Upload a file (goes to Cloudinary), paste a full URL, OR just type the filename e.g. 12baskets.png — it auto-prefixes your site URL.</div>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-primary" id="certSubmitBtn">Add Certification</button>
@@ -212,14 +213,58 @@ form.entry-form { background:var(--surface); border:1px solid var(--border); bor
         </div>
       </form>
     </section>
+
+    <!-- BLOG PANEL -->
+    <section class="panel" data-panel="blog">
+      <h2>Blog Posts</h2>
+      <div id="blogList"><div class="empty-note">Loading…</div></div>
+
+      <h3 id="blogFormTitle">Add New Post</h3>
+      <form class="entry-form" id="blogForm">
+        <input type="hidden" id="blogId">
+        <div class="field-row">
+          <div class="field"><label>Title</label><input type="text" id="b_title" placeholder="e.g. I built six websites nobody asked for." required></div>
+          <div class="field"><label>Tag</label><input type="text" id="b_tag" placeholder="e.g. How I built it"></div>
+        </div>
+        <div class="field"><label>Preview / Summary</label><textarea id="b_preview" placeholder="2–3 sentence preview shown on the portfolio..." required></textarea></div>
+        <div class="field"><label>Full Content (optional)</label><textarea id="b_content" style="min-height:160px;" placeholder="Full post body — write as much as you want here. Leave empty if you only want a teaser for now."></textarea></div>
+        <div class="field-row">
+          <div class="field"><label>Link (optional)</label><input type="url" id="b_link" placeholder="https://... (leave empty if no external post)"></div>
+          <div class="field"><label>Order (lower = first)</label><input type="number" id="b_order" value="1"></div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="blogSubmitBtn">Add Post</button>
+          <button type="button" class="btn-ghost" id="blogCancelBtn" style="display:none;">Cancel Edit</button>
+          <span class="success" id="blogMsg"></span>
+        </div>
+      </form>
+    </section>
   </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script>
+// ============================================================
+// EDIT THESE TWO SECTIONS — everything else is automatic
+// ============================================================
+
+// 1. Cloudinary (free image uploads — no card needed)
+//    Sign up at cloudinary.com, then fill in your Cloud Name
+//    and an unsigned Upload Preset (Settings > Upload > Upload presets)
+const CLOUDINARY_CONFIG = {
+  cloudName: "YOUR_CLOUD_NAME",       // e.g. "dxyzabc123"
+  uploadPreset: "YOUR_UPLOAD_PRESET"  // e.g. "portfolio_uploads"
+};
+
+// 2. Your live site URL (no trailing slash)
+//    Once set, you can type just a filename in image fields
+//    e.g. "12baskets.png" becomes "https://yoursite.vercel.app/images/12baskets.png"
+const SITE_BASE_URL = "YOUR_VERCEL_URL"; // e.g. "https://abisola-portfolio.vercel.app"
+
+// ============================================================
 <script>
 if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
   document.getElementById('loginErr').textContent = "Firebase isn't configured yet. Fill in firebase-config.js first (see FIREBASE_SETUP_GUIDE.md).";
@@ -227,8 +272,6 @@ if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) 
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-let storage = null;
-try { storage = firebase.storage(); } catch (e) {}
 
 // ---------- AUTH ----------
 const loginView = document.getElementById('loginView');
@@ -268,20 +311,52 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- HELPERS ----------
+// Uploads to Cloudinary's free tier (no card required) via an
+// "unsigned" upload preset. Edit CLOUDINARY_CONFIG at the top of this script.
 async function uploadImageIfAny(fileInput, collectionName) {
   const file = fileInput.files[0];
   if (!file) return null;
-  if (!storage) { alert('Firebase Storage is not set up. Use the image URL field instead, or enable Storage in your Firebase project.'); return null; }
-  const path = `${collectionName}/${Date.now()}-${file.name}`;
-  const ref = storage.ref().child(path);
-  await ref.put(file);
-  return await ref.getDownloadURL();
+
+  if (typeof CLOUDINARY_CONFIG === 'undefined' ||
+      CLOUDINARY_CONFIG.cloudName === 'YOUR_CLOUD_NAME' ||
+      CLOUDINARY_CONFIG.uploadPreset === 'YOUR_UPLOAD_PRESET') {
+    alert('Image upload isn\'t configured yet. Fill in CLOUDINARY_CONFIG at the top of admin.html, or paste an image URL instead.');
+    return null;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+  formData.append('folder', collectionName);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Upload failed');
+  return data.secure_url;
 }
 
-function loadAll() {
+// Resolves what the user typed in the image URL field.
+// - Just a filename like "12baskets.png" → prefixes SITE_BASE_URL/images/
+// - A full URL (starts with http/https) → used as-is
+// - Empty → returns empty string
+function resolveImageUrl(value) {
+  const v = value.trim();
+  if (!v) return '';
+  if (v.startsWith('http://') || v.startsWith('https://') || v.startsWith('/')) return v;
+  const base = (typeof SITE_BASE_URL !== 'undefined' && SITE_BASE_URL !== 'YOUR_VERCEL_URL')
+    ? SITE_BASE_URL.replace(/\/$/, '')
+    : '';
+  return base ? `${base}/images/${v}` : `images/${v}`;
+}
+
+
   loadProjects();
   loadCerts();
   loadTools();
+  loadBlog();
 }
 
 // ============================================================
@@ -339,7 +414,7 @@ projectForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   projectMsg.textContent = 'Saving…';
   try {
-    let imageUrl = document.getElementById('p_imageUrl').value.trim();
+    let imageUrl = resolveImageUrl(document.getElementById('p_imageUrl').value);
     const uploaded = await uploadImageIfAny(document.getElementById('p_imageFile'), 'projects');
     if (uploaded) imageUrl = uploaded;
 
@@ -420,7 +495,7 @@ certForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   certMsg.textContent = 'Saving…';
   try {
-    let imageUrl = document.getElementById('c_imageUrl').value.trim();
+    let imageUrl = resolveImageUrl(document.getElementById('c_imageUrl').value);
     const uploaded = await uploadImageIfAny(document.getElementById('c_imageFile'), 'certifications');
     if (uploaded) imageUrl = uploaded;
 
@@ -537,7 +612,94 @@ function resetForm(prefix) {
   document.getElementById(`${prefix}CancelBtn`).style.display = 'none';
 }
 
+// ============================================================
+// BLOG
+// ============================================================
+const blogForm = document.getElementById('blogForm');
+const blogMsg = document.getElementById('blogMsg');
+
+function loadBlog() {
+  db.collection('blog').orderBy('order').get().then(snap => {
+    const list = document.getElementById('blogList');
+    list.innerHTML = '';
+    if (snap.empty) { list.innerHTML = '<div class="empty-note">No blog posts yet. Add one below — it\'ll appear live on your portfolio.</div>'; return; }
+    snap.forEach(doc => {
+      const b = doc.data();
+      const row = document.createElement('div');
+      row.className = 'item';
+      row.innerHTML = `
+        <div class="item-info">
+          <div class="item-title">${b.title || '(untitled)'}</div>
+          <div class="item-sub">${b.tag || ''} · order ${b.order ?? ''}</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-ghost btn-small" data-edit="${doc.id}">Edit</button>
+          <button class="btn-ghost btn-small btn-danger" data-delete="${doc.id}">Delete</button>
+        </div>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editBlog(b.dataset.edit)));
+    list.querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', () => deleteEntry('blog', b.dataset.delete, loadBlog)));
+  });
 }
-</script>
+
+function editBlog(id) {
+  db.collection('blog').doc(id).get().then(doc => {
+    const b = doc.data();
+    document.getElementById('blogId').value = id;
+    document.getElementById('b_title').value = b.title || '';
+    document.getElementById('b_tag').value = b.tag || '';
+    document.getElementById('b_preview').value = b.preview || '';
+    document.getElementById('b_content').value = b.content || '';
+    document.getElementById('b_link').value = b.link || '';
+    document.getElementById('b_order').value = b.order ?? 1;
+    document.getElementById('blogFormTitle').textContent = 'Edit Post';
+    document.getElementById('blogSubmitBtn').textContent = 'Save Changes';
+    document.getElementById('blogCancelBtn').style.display = 'inline-flex';
+    blogForm.scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+document.getElementById('blogCancelBtn').addEventListener('click', () => {
+  blogForm.reset();
+  document.getElementById('blogId').value = '';
+  document.getElementById('blogFormTitle').textContent = 'Add New Post';
+  document.getElementById('blogSubmitBtn').textContent = 'Add Post';
+  document.getElementById('blogCancelBtn').style.display = 'none';
+});
+
+blogForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  blogMsg.textContent = 'Saving…';
+  try {
+    const data = {
+      title: document.getElementById('b_title').value.trim(),
+      tag: document.getElementById('b_tag').value.trim(),
+      preview: document.getElementById('b_preview').value.trim(),
+      content: document.getElementById('b_content').value.trim(),
+      link: document.getElementById('b_link').value.trim(),
+      order: Number(document.getElementById('b_order').value) || 0,
+      updatedAt: new Date().toISOString()
+    };
+    const id = document.getElementById('blogId').value;
+    if (id) await db.collection('blog').doc(id).set(data);
+    else {
+      data.createdAt = new Date().toISOString();
+      await db.collection('blog').add(data);
+    }
+    blogMsg.textContent = 'Saved!';
+    blogForm.reset();
+    document.getElementById('blogId').value = '';
+    document.getElementById('blogFormTitle').textContent = 'Add New Post';
+    document.getElementById('blogSubmitBtn').textContent = 'Add Post';
+    document.getElementById('blogCancelBtn').style.display = 'none';
+    loadBlog();
+    setTimeout(() => blogMsg.textContent = '', 2000);
+  } catch (err) {
+    blogMsg.textContent = 'Error: ' + err.message;
+  }
+});
+
+
 </body>
 </html>
