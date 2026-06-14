@@ -98,10 +98,19 @@
   prevBtn.addEventListener('click', () => { if (current > 0) { current--; updateCarousel(); } });
   nextBtn.addEventListener('click', () => { if (current < pageCount - 1) { current++; updateCarousel(); } });
 
+  let carouselOpen = false;
+
   moreBtn.addEventListener('click', () => {
-    carousel.style.display = 'block';
-    moreBtn.style.display  = 'none';
-    carousel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    carouselOpen = !carouselOpen;
+    if (carouselOpen) {
+      carousel.style.display = 'block';
+      moreBtn.innerHTML = 'Hide Projects <i class="fas fa-chevron-up"></i>';
+      carousel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      carousel.style.display = 'none';
+      moreBtn.innerHTML = 'View More Work <i class="fas fa-arrow-right"></i>';
+      moreBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   });
 
   // ---- Wait for Firebase, then fetch ----
