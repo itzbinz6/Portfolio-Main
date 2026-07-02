@@ -8,239 +8,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>
-:root {
-  --bg:       #FAFAF8;
-  --surface:  #FFFFFF;
-  --border:   #E8E8E4;
-  --ink:      #1A1A18;
-  --ink2:     #4A4A46;
-  --ink3:     #8A8A84;
-  --accent:   #0A5C3C;
-  --accent2:  #D4AF37;
-  --accent-soft: #EAF3EE;
-  --radius:   12px;
-  --shadow:   0 2px 16px rgba(0,0,0,0.06);
-  --shadow-md:0 4px 32px rgba(0,0,0,0.10);
-  --max:      1100px;
-}
-[data-theme="dark"] {
-  --bg:       #111110;
-  --surface:  #1C1C1A;
-  --border:   #2E2E2A;
-  --ink:      #F0F0EC;
-  --ink2:     #B0B0A8;
-  --ink3:     #6A6A64;
-  --accent:   #2ECC8A;
-  --accent2:  #D4AF37;
-  --accent-soft: #0D2B1E;
-  --shadow:   0 2px 16px rgba(0,0,0,0.24);
-  --shadow-md:0 4px 32px rgba(0,0,0,0.32);
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  font-size: 16px;
-  line-height: 1.65;
-  transition: background .3s, color .3s;
-}
-img { max-width: 100%; display: block; }
-a { text-decoration: none; color: inherit; }
-button, input, select, textarea { font-family: inherit; font-size: inherit; }
-.container { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
-
-/* NAV */
-#mainNav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  transition: background .3s, border-color .3s;
-}
-.nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-.logo { font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
-.logo span { color: var(--accent); }
-.nav-links { display: flex; gap: 24px; list-style: none; }
-.nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--ink2); transition: color .2s; }
-.nav-links a:hover { color: var(--ink); }
-.nav-right { display: flex; align-items: center; gap: 12px; }
-
-.theme-btn { background: none; border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 8px; cursor: pointer; color: var(--ink2); display: flex; align-items: center; justify-content: center; font-size: 0.875rem; transition: all .2s; }
-.theme-btn:hover { border-color: var(--ink); color: var(--ink); }
-.hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
-.hamburger span { display: block; width: 22px; height: 2px; background: var(--ink); border-radius: 2px; transition: all .2s; }
-.mobile-menu { display: none; position: fixed; top: 64px; left: 0; right: 0; z-index: 99; background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 24px 20px; flex-direction: column; gap: 0; }
-.mobile-menu.open { display: flex; }
-.mobile-link { display: block; padding: 12px 0; border-bottom: 1px solid var(--border); font-weight: 500; color: var(--ink2); font-size: 0.9375rem; }
-.mobile-link:last-child { border-bottom: none; }
-
-/* HERO */
-#hero { padding: 140px 0 96px; position: relative; overflow: hidden; }
-.hero-content { max-width: 680px; }
-.hero-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--accent-soft); border: 1px solid rgba(10,92,60,0.15); border-radius: 20px; font-size: 0.8125rem; font-weight: 600; color: var(--accent); margin-bottom: 28px; letter-spacing: 0.02em; text-transform: uppercase; }
-.hero-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.5rem, 6vw, 4rem); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 20px; }
-h1 em { font-style: italic; color: var(--accent); }
-.hero-sub { font-size: 1.0625rem; color: var(--ink2); max-width: 520px; margin-bottom: 36px; line-height: 1.7; }
-.hero-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
-.btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: var(--ink); color: var(--bg); border-radius: 8px; font-size: 0.9375rem; font-weight: 600; transition: opacity .2s; }
-.btn-primary:hover { opacity: .85; }
-.btn-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: transparent; color: var(--ink); border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.9375rem; font-weight: 500; transition: border-color .2s, color .2s; }
-.btn-ghost:hover { border-color: var(--ink); }
-.btn-ghost .fa-whatsapp { color: #25D366; }
-
-/* SECTIONS */
-section { padding: 88px 0; }
-.section-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
-.section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 16px; }
-.section-sub { font-size: 1.0625rem; color: var(--ink2); max-width: 520px; margin-bottom: 40px; }
-
-/* ABOUT */
-#about { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.about-grid { display: grid; grid-template-columns: 280px 1fr; gap: 64px; align-items: start; }
-.about-visual { position: relative; }
-.avatar-wrap { width: 220px; height: 220px; border-radius: 16px; overflow: hidden; border: 3px solid var(--border); box-shadow: var(--shadow-md); background: var(--bg); }
-.avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
-.about-badge { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 8px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 0.8125rem; font-weight: 500; color: var(--ink2); }
-.about-text .section-title { margin-bottom: 20px; }
-.about-text p { color: var(--ink2); margin-bottom: 14px; line-height: 1.75; }
-.about-text p strong { color: var(--ink); font-weight: 600; }
-.certs-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
-.cert-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--accent-soft); border: 1px solid rgba(10,92,60,0.12); border-radius: 6px; font-size: 0.8125rem; font-weight: 500; color: var(--accent); }
-
-/* PROJECTS */
-.projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-top: 8px; }
-.work-more-wrap { display: flex; justify-content: center; margin-top: 32px; }
-.work-carousel { margin-top: 32px; }
-.work-track-wrap { overflow: hidden; }
-.work-track { display: flex; transition: transform .4s ease; }
-.work-page { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; flex: 0 0 100%; min-width: 0; }
-.work-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; }
-.work-btn { width: 40px; height: 40px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; transition: all .2s; }
-.work-btn:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
-.work-btn:disabled { opacity: .35; cursor: default; }
-.work-dots { display: flex; gap: 6px; align-items: center; }
-.work-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background .2s; }
-.work-dot.active { background: var(--accent); }
-.work-empty { font-size: 0.9375rem; color: var(--ink3); text-align: center; padding: 32px 0; }
-@media (max-width: 900px) { .work-page { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .work-page { grid-template-columns: 1fr; } }
-
-.project-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: box-shadow .2s, transform .2s; }
-.project-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
-.project-preview { height: 200px; overflow: hidden; background: var(--bg); }
-.project-preview img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
-.project-card:hover .project-preview img { transform: scale(1.04); }
-.project-body { padding: 20px; }
-.project-type { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
-.project-name { font-family: 'Playfair Display', serif; font-size: 1.125rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
-.demo-tag { font-family: 'DM Sans', sans-serif; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent2); color: #1A1A18; padding: 2px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
-.project-desc { font-size: 0.875rem; color: var(--ink2); margin-bottom: 16px; line-height: 1.6; }
-.project-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 600; color: var(--accent); transition: gap .2s; }
-.project-link:hover { gap: 10px; }
-
-/* SKILLS */
-#skills { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 8px; }
-.skill-card { padding: 20px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
-.skill-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; margin-bottom: 12px; }
-.skill-icon.yellow { background: #FEF9E7; color: #E67E22; }
-.skill-icon.blue { background: #EAF2FF; color: #3498DB; }
-.skill-icon.green { background: #EAF5EA; color: #27AE60; }
-.skill-icon.purple { background: #F3ECF8; color: #9B59B6; }
-.skill-icon.red { background: #FDEDEC; color: #E74C3C; }
-.skill-icon.teal { background: #E8F6F3; color: #1ABC9C; }
-.skill-name { font-size: 0.9375rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
-.skill-desc { font-size: 0.8125rem; color: var(--ink2); line-height: 1.6; }
-
-/* CERTIFICATIONS */
-.certs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 8px; }
-.cert-card { padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-.cert-check { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 0.875rem; margin-bottom: 12px; }
-.cert-issuer { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
-.cert-title { font-family: 'Playfair Display', serif; font-size: 1.0625rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
-.cert-desc { font-size: 0.8125rem; color: var(--ink2); line-height: 1.6; margin-bottom: 14px; }
-.cert-img-wrap { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
-.cert-img-wrap img { width: 100%; }
-
-/* FAQ */
-#faq { background: var(--bg); }
-.faq-list { max-width: 680px; margin-top: 8px; }
-.faq-item { border-bottom: 1px solid var(--border); }
-.faq-q { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; font-size: 0.9375rem; font-weight: 600; color: var(--ink); cursor: pointer; gap: 16px; transition: color .2s; }
-.faq-q:hover { color: var(--accent); }
-.faq-q i { color: var(--ink3); font-size: 0.75rem; transition: transform .25s; flex-shrink: 0; }
-.faq-item.open .faq-q i { transform: rotate(180deg); }
-.faq-a { max-height: 0; overflow: hidden; font-size: 0.9375rem; color: var(--ink2); line-height: 1.7; transition: max-height .3s ease, padding .3s; }
-.faq-item.open .faq-a { max-height: 300px; padding-bottom: 20px; }
-
-/* CONTACT */
-#contact { background: var(--surface); border-top: 1px solid var(--border); }
-.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
-.contact-left .section-title { margin-bottom: 14px; }
-.contact-left > p { color: var(--ink2); margin-bottom: 28px; line-height: 1.7; }
-.contact-links { display: flex; flex-direction: column; gap: 12px; }
-.contact-link { display: inline-flex; align-items: center; gap: 12px; font-size: 0.9375rem; color: var(--ink2); font-weight: 500; transition: color .2s; }
-.contact-link i { width: 20px; color: var(--accent); }
-.contact-link:hover { color: var(--ink); }
-.contact-form { display: flex; flex-direction: column; gap: 16px; }
-.cf-group { display: flex; flex-direction: column; gap: 6px; }
-.cf-group label { font-size: 0.875rem; font-weight: 600; color: var(--ink); }
-.cf-group input, .cf-group select, .cf-group textarea { padding: 12px 14px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; color: var(--ink); transition: border-color .2s; outline: none; appearance: none; }
-.cf-group input:focus, .cf-group select:focus, .cf-group textarea:focus { border-color: var(--accent); }
-.cf-group textarea { min-height: 110px; resize: vertical; }
-.cf-error { font-size: 0.8125rem; color: #E53E3E; display: none; }
-.submit-btn { padding: 14px 24px; background: var(--ink); color: var(--bg); border: none; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: opacity .2s; align-self: flex-start; }
-.submit-btn:hover { opacity: .85; }
-.cf-success { font-size: 0.875rem; color: var(--accent); font-weight: 600; display: none; }
-
-/* FOOTER */
-footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: center; font-size: 0.875rem; color: var(--ink3); }
-
-/* BLOG POSTS */
-.post-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
-.post-tag { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent-soft); color: var(--accent); padding: 3px 9px; border-radius: 4px; display: inline-block; margin-bottom: 10px; }
-.post-title { font-family: 'Playfair Display', serif; font-size: 1.0625rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; line-height: 1.4; }
-.post-preview { font-size: 0.875rem; color: var(--ink2); line-height: 1.6; margin-bottom: 12px; }
-.post-empty { border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 24px; text-align: center; font-size: 0.875rem; color: var(--ink3); }
-.projects-loading { padding: 32px; text-align: center; color: var(--ink3); font-size: 0.9375rem; grid-column: 1/-1; }
-.projects-loading i { margin-right: 8px; color: var(--accent); }
-
-/* ANIMATIONS */
-.fade-in { opacity: 0; transform: translateY(20px); transition: opacity .5s ease, transform .5s ease; }
-.fade-in.visible { opacity: 1; transform: translateY(0); }
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .nav-links { display: none; }
-  .hamburger { display: flex; }
-  #hero { padding: 100px 0 72px; }
-  .about-grid { grid-template-columns: 1fr; gap: 36px; }
-  .avatar-wrap { width: 160px; height: 160px; }
-  .contact-grid { grid-template-columns: 1fr; gap: 40px; }
-  section { padding: 64px 0; }
-}
-@media (max-width: 480px) {
-  .hero-buttons { flex-direction: column; }
-  .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
-}
-</style>
+<link rel="stylesheet" href="shared.css">
 </head>
 <body>
 
 <nav id="mainNav">
   <div class="container nav-inner">
-    <a href="#hero" class="logo">ajayi<span>.</span></a>
+    <a href="index.html" class="logo">ajayi<span>.</span></a>
     <ul class="nav-links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#projects">Work</a></li>
-      <li><a href="#skills">Skills</a></li>
-      <li><a href="#certifications">Certs</a></li>
-      <li><a href="#blog">Blog</a></li>
-      <li><a href="#faq">FAQ</a></li>
-      <li><a href="#contact">Contact</a></li>
+      <li><a href="work.html">Work</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="certifications.html">Certifications</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
     </ul>
     <div class="nav-right">
       <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
@@ -254,13 +34,11 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
 </nav>
 
 <div class="mobile-menu" id="mobileMenu">
-  <a href="#about" class="mobile-link">About</a>
-  <a href="#projects" class="mobile-link">Work</a>
-  <a href="#skills" class="mobile-link">Skills</a>
-  <a href="#certifications" class="mobile-link">Certs</a>
-  <a href="#blog" class="mobile-link">Blog</a>
-  <a href="#faq" class="mobile-link">FAQ</a>
-  <a href="#contact" class="mobile-link">Contact</a>
+  <a href="work.html" class="mobile-link">Work</a>
+  <a href="about.html" class="mobile-link">About</a>
+  <a href="certifications.html" class="mobile-link">Certifications</a>
+  <a href="index.html#faq" class="mobile-link">FAQ</a>
+  <a href="index.html#contact" class="mobile-link">Contact</a>
 </div>
 
 <section id="hero">
@@ -284,18 +62,12 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
         </div>
         <div class="about-badge"><i class="fas fa-graduation-cap"></i> CS · Landmark University</div>
       </div>
-      <div class="about-text">
+      <div class="about-text about-teaser">
         <div class="section-label">About Me</div>
         <h2 class="section-title">Builder.<br>Student. In progress.</h2>
-        <p>I'm <strong>Ajayi Abisola Enoch</strong> — a Computer Science student at Landmark University in Nigeria, and someone who has never been able to do just one thing at a time.</p>
-        <p>Web design happened naturally. I was studying CS, started building things, and realized I couldn't stop. Not because someone told me to — but because there's something satisfying about taking an idea and making it exist on a screen that anyone in the world can open. It made sense with what I was already learning, and it turned out I was good at it.</p>
-        <p>Most of my projects started the same way: I'd find a business doing real work — a restaurant, a cake studio, a café — with nothing but a WhatsApp number and an Instagram page to show for it. So I'd build them something. No brief, no commission. Just a demo and a message saying <strong>"I think you deserve better than this."</strong></p>
-        <p>Alongside the design work, I'm also building out affiliate marketing on the side — different game, same instinct: find something genuinely useful, learn it properly, then figure out how to put it in front of the right people.</p>
-        <p>None of this happens in a vacuum either. I'm a Christian, and honestly, God has been my backing through all of it — the quiet right hand in the background when I'm stuck on something at 2am or a project doesn't go the way I planned. I don't lead with that, but it's part of how I move through all of this.</p>
-        <p>Outside of that, I'm quietly working on a few other things I'm not ready to talk about publicly yet. They're early. They're mine. And they remind me that web design is just one piece of something bigger I'm still figuring out.</p>
-        <p>When I'm not building, you'll usually find me deep in an anime that actually makes me think — Attack on Titan, Summertime Rendering, that kind of thing — or with gospel music on, Dunsin Oyekan on repeat, depending on the kind of day it's been. I also mess around with trading strategies sometimes, mostly because I like figuring out how systems work — which is probably the same itch that got me into code in the first place.</p>
-        <p>I'm building mostly alone, learning constantly, and okay with not having everything figured out yet. If something on this site made you curious — about the work, about me, about anything — my contact is right below.</p>
-        <div class="certs-row">
+        <p>I'm <strong>Ajayi Abisola Enoch</strong> — a Computer Science student at Landmark University in Nigeria, and someone who has never been able to do just one thing at a time. Most of my projects start the same way: I find a business running on nothing but a WhatsApp number, and I build them something better — no brief, no commission asked.</p>
+        <a href="about.html" class="project-link">Read my full story <i class="fas fa-arrow-right"></i></a>
+        <div class="certs-row" style="margin-top:24px;">
           <span class="cert-chip"><i class="fas fa-certificate"></i> Responsive Web Design · freeCodeCamp</span>
           <span class="cert-chip"><i class="fas fa-certificate"></i> Claude 101 · Anthropic</span>
         </div>
@@ -316,18 +88,7 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
     </div>
 
     <div class="work-more-wrap">
-      <button class="btn-ghost" id="workMoreBtn"><i class="fas fa-plus"></i> View More Work</button>
-    </div>
-
-    <div class="work-carousel" id="workCarousel" style="display:none;">
-      <div class="work-track-wrap">
-        <div class="work-track" id="workTrack"></div>
-      </div>
-      <div class="work-nav" id="workNav" style="display:none;">
-        <button class="work-btn" id="workPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
-        <div class="work-dots" id="workDots"></div>
-        <button class="work-btn" id="workNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
-      </div>
+      <a href="work.html" class="btn-ghost"><i class="fas fa-arrow-right"></i> View All Work</a>
     </div>
   </div>
 </section>
@@ -337,36 +98,13 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
     <div class="fade-in">
       <div class="section-label">Tools</div>
       <h2 class="section-title">What I know. What I use.</h2>
-      <p class="section-sub">Certifications I've earned, tools I work with daily, and a few things I'm still learning.</p>
+      <p class="section-sub">A quick look at my core stack — the full toolkit, including certifications, lives on the About page.</p>
     </div>
     <div class="skills-grid" id="skillsGrid">
       <div class="projects-loading" id="skillsLoading"><i class="fas fa-spinner fa-spin"></i> Loading skills…</div>
     </div>
-  </div>
-</section>
-
-<section id="certifications">
-  <div class="container">
-    <div class="fade-in">
-      <div class="section-label">Credentials</div>
-      <h2 class="section-title">Certifications</h2>
-      <p class="section-sub">Formal proof of what I know, with more coming as I keep building.</p>
-    </div>
-    <div class="certs-grid" id="certsGrid">
-      <div class="projects-loading" id="certsLoading"><i class="fas fa-spinner fa-spin"></i> Loading certifications…</div>
-    </div>
-  </div>
-</section>
-
-<section id="blog">
-  <div class="container">
-    <div class="fade-in">
-      <div class="section-label">Thoughts</div>
-      <h2 class="section-title">Things I noticed. Things I built. Things I'm figuring out.</h2>
-      <p class="section-sub">Not a tutorial blog. Not a personal diary. Just writing when something is worth saying — behind the scenes of projects, observations nobody else is making, and honest notes from learning in public.</p>
-    </div>
-    <div class="fade-in" id="blogPostsWrap">
-      <div class="projects-loading" id="blogLoading"><i class="fas fa-spinner fa-spin"></i> Loading posts…</div>
+    <div class="work-more-wrap">
+      <a href="about.html" class="project-link">See my full toolkit <i class="fas fa-arrow-right"></i></a>
     </div>
   </div>
 </section>
@@ -442,7 +180,7 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
 
 <footer>
   <div class="container">
-    <p>© 2026 Ajayi Abisola Enoch · Built by me, for me · <a href="https://wa.me/2348081595625" style="color:var(--accent)">Say hi on WhatsApp</a> · <a href="admin.html" style="color:var(--ink3); opacity:.5;" aria-label="Admin">admin</a></p>
+    <p>© 2026 Ajayi Abisola Enoch · Built by me, for me · <a href="https://wa.me/2348081595625" style="color:var(--accent)">Say hi on WhatsApp</a></p>
   </div>
 </footer>
 
@@ -450,6 +188,10 @@ footer { padding: 32px 24px; border-top: 1px solid var(--border); text-align: ce
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script>
+  // Homepage teaser limits: 3 projects, 4 skills. Everything else lives on its own page.
+  window.SITE_LIMITS = { projects: 3, skills: 4 };
+</script>
 <script src="site-data.js"></script>
 
 <script>
@@ -472,8 +214,6 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
-
-
 
 document.querySelectorAll('.faq-q').forEach(q => {
   q.addEventListener('click', () => {

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work · Ajayi Abisola Enoch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<nav id="mainNav">
+  <div class="container nav-inner">
+    <a href="index.html" class="logo">ajayi<span>.</span></a>
+    <ul class="nav-links">
+      <li><a href="work.html">Work</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="certifications.html">Certifications</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
+        <i class="fas fa-moon" id="themeIcon"></i>
+      </button>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="work.html" class="mobile-link">Work</a>
+  <a href="about.html" class="mobile-link">About</a>
+  <a href="certifications.html" class="mobile-link">Certifications</a>
+  <a href="index.html#faq" class="mobile-link">FAQ</a>
+  <a href="index.html#contact" class="mobile-link">Contact</a>
+</div>
+
+<section class="page-hero">
+  <div class="container">
+    <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to home</a>
+    <div class="section-label">Work</div>
+    <h1>Everything I've built.</h1>
+    <p>All demos — sites I built for real businesses as cold pitches or practice. No client brief, just me deciding a business deserved a better web presence and building it.</p>
+  </div>
+</section>
+
+<section id="projects" style="padding-top:24px;">
+  <div class="container">
+    <div class="work-full-grid" id="projectsGrid">
+      <div class="projects-loading" id="projectsLoading"><i class="fas fa-spinner fa-spin"></i> Loading projects…</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>© 2026 Ajayi Abisola Enoch · Built by me, for me · <a href="https://wa.me/2348081595625" style="color:var(--accent)">Say hi on WhatsApp</a></p>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  // No limit set — this page renders every project, sorted by the same 'order' field.
+  window.SITE_LIMITS = { projects: null };
+</script>
+<script src="site-data.js"></script>
+
+<script>
+const themeBtn = document.getElementById('themeBtn');
+const themeIcon = document.getElementById('themeIcon');
+const saved = localStorage.getItem('theme') || 'light';
+if (saved === 'dark') { document.documentElement.setAttribute('data-theme','dark'); themeIcon.className='fas fa-sun'; }
+themeBtn.addEventListener('click', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) { document.documentElement.removeAttribute('data-theme'); themeIcon.className='fas fa-moon'; localStorage.setItem('theme','light'); }
+  else { document.documentElement.setAttribute('data-theme','dark'); themeIcon.className='fas fa-sun'; localStorage.setItem('theme','dark'); }
+});
+
+const hamburger = document.getElementById('hamburger');
+const mobileMenu = document.getElementById('mobileMenu');
+hamburger.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+mobileMenu.querySelectorAll('.mobile-link').forEach(l => l.addEventListener('click', () => mobileMenu.classList.remove('open')));
+</script>
+</body>
+</html>

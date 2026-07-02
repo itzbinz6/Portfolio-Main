@@ -1,19 +1,5 @@
 (function () {
 
-  // ---- DOM refs ----
-  const projectsGrid = document.getElementById('projectsGrid');
-  const skillsGrid   = document.getElementById('skillsGrid');
-  const certsGrid    = document.getElementById('certsGrid');
-  const moreBtn      = document.getElementById('workMoreBtn');
-  const carousel     = document.getElementById('workCarousel');
-  const track        = document.getElementById('workTrack');
-  const nav          = document.getElementById('workNav');
-  const dotsWrap     = document.getElementById('workDots');
-  const prevBtn      = document.getElementById('workPrev');
-  const nextBtn      = document.getElementById('workNext');
-
-  let current = 0, pageCount = 0;
-
   // ---- Helpers ----
   function el(html) {
     const t = document.createElement('template');
@@ -87,110 +73,158 @@
       </div>`);
   }
 
-  // ---- Carousel ----
-  function updateCarousel() {
-    track.style.transform = `translateX(-${current * 100}%)`;
-    prevBtn.disabled = current === 0;
-    nextBtn.disabled = current === pageCount - 1;
-    dotsWrap.querySelectorAll('.work-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  // ---- Section loaders (each is a no-op if its container isn't on the page) ----
+
+  function initProjects(db, limit) {
+    const grid = document.getElementById('projectsGrid');
+    if (!grid) return;
+
+    const moreBtn  = document.getElementById('workMoreBtn');
+    const carousel = document.getElementById('workCarousel');
+    const track    = document.getElementById('workTrack');
+    const nav      = document.getElementById('workNav');
+    const dotsWrap = document.getElementById('workDots');
+    const prevBtn  = document.getElementById('workPrev');
+    const nextBtn  = document.getElementById('workNext');
+    let current = 0, pageCount = 0;
+
+    // Carousel controls only exist on the homepage's trimmed view
+    if (carousel && track && nav && dotsWrap && prevBtn && nextBtn) {
+      function updateCarousel() {
+        track.style.transform = `translateX(-${current * 100}%)`;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === pageCount - 1;
+        dotsWrap.querySelectorAll('.work-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+      }
+      prevBtn.addEventListener('click', () => { if (current > 0) { current--; updateCarousel(); } });
+      nextBtn.addEventListener('click', () => { if (current < pageCount - 1) { current++; updateCarousel(); } });
+
+      let carouselOpen = false;
+      if (moreBtn) {
+        moreBtn.addEventListener('click', () => {
+          carouselOpen = !carouselOpen;
+          if (carouselOpen) {
+            carousel.style.display = 'block';
+            moreBtn.innerHTML = 'Hide Projects <i class="fas fa-chevron-up"></i>';
+            carousel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } else {
+            carousel.style.display = 'none';
+            moreBtn.innerHTML = 'View More Work <i class="fas fa-arrow-right"></i>';
+            moreBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      }
+
+      db.collection('projects').orderBy('order').get().then(snap => {
+        clearLoader('projectsLoading');
+        if (snap.empty) return;
+
+        const all   = [];
+        snap.forEach(doc => all.push(doc.data()));
+
+        const main  = all.slice(0, limit);
+        const extra = all.slice(limit);
+
+        main.forEach(p => grid.appendChild(projectCard(p)));
+
+        if (extra.length > 0) {
+          const pages = [];
+          for (let i = 0; i < extra.length; i += 6) pages.push(extra.slice(i, i + 6));
+
+          pages.forEach((cardsInPage, idx) => {
+            const page = el('<div class="work-page"></div>');
+            cardsInPage.forEach(p => page.appendChild(projectCard(p)));
+            track.appendChild(page);
+            if (pages.length > 1) {
+              const dot = el('<div class="work-dot"></div>');
+              if (idx === 0) dot.classList.add('active');
+              dotsWrap.appendChild(dot);
+            }
+          });
+
+          pageCount = pages.length;
+          if (pageCount > 1) nav.style.display = 'flex';
+          updateCarousel();
+          if (moreBtn) moreBtn.style.display = 'flex';
+        } else if (moreBtn) {
+          moreBtn.style.display = 'none';
+        }
+      }).catch(() => clearLoader('projectsLoading'));
+
+    } else {
+      // No carousel markup on this page — either a capped teaser (homepage,
+      // limit is a number and the rest is left for work.html to show) or
+      // the full work.html grid (limit is falsy, render everything).
+      db.collection('projects').orderBy('order').get().then(snap => {
+        clearLoader('projectsLoading');
+        if (snap.empty) {
+          grid.appendChild(el('<div class="work-empty">No projects yet — check back soon.</div>'));
+          return;
+        }
+        let docs = snap.docs;
+        if (limit) docs = docs.slice(0, limit);
+        docs.forEach(doc => grid.appendChild(projectCard(doc.data())));
+      }).catch(() => clearLoader('projectsLoading'));
+    }
   }
 
-  prevBtn.addEventListener('click', () => { if (current > 0) { current--; updateCarousel(); } });
-  nextBtn.addEventListener('click', () => { if (current < pageCount - 1) { current++; updateCarousel(); } });
+  function initSkills(db, limit) {
+    const grid = document.getElementById('skillsGrid');
+    if (!grid) return;
+    db.collection('tools').orderBy('order').get().then(snap => {
+      clearLoader('skillsLoading');
+      let docs = snap.docs;
+      if (limit) docs = docs.slice(0, limit);
+      docs.forEach(doc => grid.appendChild(skillCard(doc.data())));
+    }).catch(() => clearLoader('skillsLoading'));
+  }
 
-  let carouselOpen = false;
+  function initCerts(db) {
+    const grid = document.getElementById('certsGrid');
+    if (!grid) return;
+    db.collection('certifications').orderBy('order').get().then(snap => {
+      clearLoader('certsLoading');
+      if (snap.empty) {
+        grid.appendChild(el('<div class="work-empty">No certifications listed yet.</div>'));
+        return;
+      }
+      snap.forEach(doc => grid.appendChild(certCard(doc.data())));
+    }).catch(() => clearLoader('certsLoading'));
+  }
 
-  moreBtn.addEventListener('click', () => {
-    carouselOpen = !carouselOpen;
-    if (carouselOpen) {
-      carousel.style.display = 'block';
-      moreBtn.innerHTML = 'Hide Projects <i class="fas fa-chevron-up"></i>';
-      carousel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-      carousel.style.display = 'none';
-      moreBtn.innerHTML = 'View More Work <i class="fas fa-arrow-right"></i>';
-      moreBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  });
+  function initBlog(db) {
+    const blogWrap = document.getElementById('blogPostsWrap');
+    if (!blogWrap) return;
+    db.collection('blog').orderBy('order').get().then(snap => {
+      clearLoader('blogLoading');
+      if (snap.empty) return;
+      snap.forEach(doc => blogWrap.appendChild(blogCard(doc.data())));
+    }).catch(() => clearLoader('blogLoading'));
+  }
 
-  // ---- Wait for Firebase, then fetch ----
+  // ---- Wait for Firebase, then fetch only what this page needs ----
   function waitForFirebase(retries, callback) {
     if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
       callback();
     } else if (retries > 0) {
       setTimeout(() => waitForFirebase(retries - 1, callback), 200);
     } else {
-      // Firebase never loaded — clear spinners silently
-      ['projectsLoading','skillsLoading','certsLoading','blogLoading'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = '';
+      ['projectsLoading', 'skillsLoading', 'certsLoading', 'blogLoading'].forEach(id => {
+        const l = document.getElementById(id);
+        if (l) l.innerHTML = '';
       });
     }
   }
 
   waitForFirebase(25, function () {
     const db = firebase.firestore();
-
-    // ---- PROJECTS ----
-    db.collection('projects').orderBy('order').get().then(snap => {
-      clearLoader('projectsLoading');
-      if (snap.empty) return;
-
-      const all   = [];
-      snap.forEach(doc => all.push(doc.data()));
-
-      const main  = all.slice(0, 6);
-      const extra = all.slice(6);
-
-      // Render main grid
-      main.forEach(p => projectsGrid.appendChild(projectCard(p)));
-
-      // Render extra into carousel pages
-      if (extra.length > 0) {
-        const pages = [];
-        for (let i = 0; i < extra.length; i += 6) pages.push(extra.slice(i, i + 6));
-
-        pages.forEach((cardsInPage, idx) => {
-          const page = el('<div class="work-page"></div>');
-          cardsInPage.forEach(p => page.appendChild(projectCard(p)));
-          track.appendChild(page);
-          if (pages.length > 1) {
-            const dot = el('<div class="work-dot"></div>');
-            if (idx === 0) dot.classList.add('active');
-            dotsWrap.appendChild(dot);
-          }
-        });
-
-        pageCount = pages.length;
-        if (pageCount > 1) nav.style.display = 'flex';
-        updateCarousel();
-        moreBtn.style.display = 'flex';
-      } else {
-        moreBtn.style.display = 'none';
-      }
-    }).catch(() => clearLoader('projectsLoading'));
-
-    // ---- SKILLS ----
-    db.collection('tools').orderBy('order').get().then(snap => {
-      clearLoader('skillsLoading');
-      snap.forEach(doc => skillsGrid.appendChild(skillCard(doc.data())));
-    }).catch(() => clearLoader('skillsLoading'));
-
-    // ---- CERTIFICATIONS ----
-    db.collection('certifications').orderBy('order').get().then(snap => {
-      clearLoader('certsLoading');
-      snap.forEach(doc => certsGrid.appendChild(certCard(doc.data())));
-    }).catch(() => clearLoader('certsLoading'));
-
-    // ---- BLOG ----
-    db.collection('blog').orderBy('order').get().then(snap => {
-      clearLoader('blogLoading');
-      if (snap.empty) return;
-      const blogWrap = document.getElementById('blogPostsWrap');
-      if (!blogWrap) return;
-      snap.forEach(doc => blogWrap.appendChild(blogCard(doc.data())));
-    }).catch(() => clearLoader('blogLoading'));
-
+    // window.SITE_LIMITS is set per-page right before this script loads.
+    // Omitting a limit (or setting it to null) loads everything.
+    const limits = window.SITE_LIMITS || {};
+    initProjects(db, limits.projects === undefined ? 6 : limits.projects);
+    initSkills(db, limits.skills);
+    initCerts(db);
+    initBlog(db);
   });
 
 })();
